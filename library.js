@@ -70,6 +70,20 @@ module.exports = {
       result = arguments[i].call(result);
     }
     return result;
+  },
+
+  /*
+   * Allows you to specify which arguments you are declaring with
+   * bash style option flags.
+   */
+  "bashCall" : function (funcName, hash) {
+    var argArray = [], i;
+    for (i in hash) {
+      if (Object.prototype.hasOwnProperty.call(hash, i)) {
+        argArray[funcName._paramPositions[i]] = hash[i];
+      }
+    }
+    return funcName.apply(null, argArray);
   }
 
 }

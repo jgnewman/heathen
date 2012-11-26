@@ -1,2 +1,5 @@
 
-(&&= 4 5 6)
+(fn factorial (match
+  (method [0] 1)
+  (method [1] (factorial 0))
+  (method [n] (* n (factorial (- n 1))))))

@@ -12,6 +12,14 @@ var whiteSpace = new RegExp(/\s/),
     strings    = {},
     regexes    = {};
 
+
+/*
+ * A functional .map alternative.  Allows you to:
+ * - exclude an item from the new list by returning comp.exclude
+ * - kill the iteration early by returning comp.kill
+ * - manually move the iteration forward more spaces by
+ *   returning comp.skip(number, valueToReturn)
+ */
 function comp(data, fun) {
   var l = data.length, i, val, result = [];
   for (i = 0; i < data.length; i += 1) {
@@ -38,6 +46,9 @@ comp.skip = function (num, val) {
   };
 };
 
+/*
+ * Removes all syntax sugar and returns pure S expressions.
+ */
 function lex(code) {
   var counter  = 0,
       newlines = 1,
@@ -166,6 +177,12 @@ function lex(code) {
          */
         case '\n':
           return char + '`line_' + (newlines += 1) + '` ';
+
+        /*
+         * Lazify values
+         */
+        case ':':
+          return '`lazy` ';
 
         /*
          * Return the character in the default case
