@@ -541,17 +541,17 @@ Program.prototype = {"compile" : techs.Program};
  * Specify functionality to be exported...
  */
 module.exports = {
-  "parse" : function (code, strings, regexes) {
+  "parse" : function (lexedObj) {
     var codeList, parseTree, compiledCode, initialScope;
-    codeStrings  = strings;
-    codeRegexes  = regexes;
+    
+    codeStrings  = lexedObj.strings;
+    codeRegexes  = lexedObj.regexes;
     initialScope = [];
 
-    codeList     = parse(code, []);
+    codeList     = parse(lexedObj.code, []);
     parseTree    = lazify(buildTree(codeList, null, initialScope));
-    compiledCode = (new Program(parseTree, initialScope, codeStrings, codeRegexes)).compile();
 
-    return compiledCode;
+    return new Program(parseTree, initialScope, codeStrings, codeRegexes);
   }
 };
 

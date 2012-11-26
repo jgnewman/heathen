@@ -3,9 +3,10 @@
  * Description: How we go about compiling each kind of data.
  */
 
-var version = '0.1',
-    library = [],
-    identifier = new RegExp(/^[a-zA-Z\_\$]/),
+var libs         = require('./library'),
+    version      = '0.1',
+    library      = [],
+    identifier   = new RegExp(/^[a-zA-Z\_\$]/),
     stringMarker = new RegExp(/\`string\_\d+\`/);
 
 /*
@@ -989,13 +990,29 @@ function populateStrReg(code, strings, regexes) {
 }
 
 /*
+ * How to create
+ */
+function writeLibs() {
+  var begin = '  HN = _HN_global.HN || {};\n';
+  loop(library, function (each) {
+    var stringified = libs[each].toString();
+    begin += ('  HN.' + each + ' = HN.' + each + ' || ' + stringified + ';\n');
+  });
+  return begin + '\n';
+}
+
+/*
  * Calls .compile() for every item in the parse tree.
  * Puts the compiled code together.
  */
 function program() {
   var frontWrap = '',
-      backWrap  = '\n}(this));\n'
-      begin     = '';
+      backWrap  = '\n}(this));\n',
+      begin     = '',
+      varStr,
+      libStr;
+
+  this.vars.push('HN');
 
   frontWrap += ('/*\n');
   frontWrap += (' * Code generated with Heathen ' + version + '.\n');
@@ -1012,12 +1029,19 @@ function program() {
     begin += '\n';
   });
 
-  begin = frontWrap + writeVars('', this.vars) + begin.replace(/\;(\s*\;)*/g, ';') + backWrap;
+  /*
+   * Replace strings' and regexes' placeholders and spit the sucker
+   * out.
+   */
+  varStr = populateStrReg(writeVars('', this.vars)) + '\n';
+  libStr = writeLibs(library);
+  begin  = populateStrReg(begin.replace(/\;(\s*\;)*/g, ';'));
 
   /*
-   * Don't forget to replace strings and regexes.
+   * Add library code to the module;
    */
-  return populateStrReg(begin, this.strings, this.regexes);
+
+  return frontWrap + varStr + libStr + begin + backWrap;
 }
 
 
