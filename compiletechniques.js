@@ -3,7 +3,9 @@
  * Description: How we go about compiling each kind of data.
  */
 
-var library = [];
+var library = [],
+    identifier = new RegExp(/^[a-zA-Z\_\$]/),
+    stringMarker = new RegExp(/\`string\_\d+\`/);
 
 /*
  * A simple, functional, iterator.
@@ -417,10 +419,189 @@ function functionDefinition() {
 }
 
 /*
+ * How to compile the basic array.
+ */
+function list() {
+  var begin = '[';
+  loop(this.body, function (each, index) {
+    if (index !== 0) {
+      begin += ', ';
+    }
+    begin += each.compile();
+  });
+  begin += ']';
+  return begin;
+}
+
+/*
+ * How to compile a hash map
+ */
+function hash() {
+  var keys = [],
+      vals = [],
+      begin = '{\n';
+  loop(this.body, function (each, index) {
+    if (index % 2 === 0) {
+      keys.push(each.compile());
+    } else {
+      vals.push(each.compile());
+    }
+  });
+  if (keys.length !== vals.length) {
+    throw new Error('No matching value for key. Line ' + this.pos + '.');
+  }
+  loop(keys, function (each, index) {
+    begin += '  ';
+    begin += (stringMarker.test(each) ? each : '"' + each + '"');
+    begin += ' : ';
+    begin += vals[index];
+    if (index !== this.length - 1) {
+      begin += ',\n';
+    } else {
+      begin += '\n';
+    }
+  });
+  begin += '}';
+  return begin;
+}
+
+/*
+ * How to compile the 'method' call.
+ */
+function method() {
+  var params = [],
+      begin  = 'function (';
+
+  if (this.body[0].type !== 'List') {
+    throw new Error("Method's first argument must be a list. Line " + this.pos + ".");
+  }
+
+  /*
+   * Get the values that are dynamic parameters
+   */
+  loop(first(this.body).body, function (each) {
+    if (each.type !== 'Value') {
+      throw new Error('You can not perform operations inside argument patterns. Line ' + this.pos + '.');
+    }
+    if (identifier.test(each.val)) {
+      params.push(each.val);
+    }
+  });
+
+  /*
+   * Add params into the parens.
+   */
+  loop(params, function (each, index) {
+    if (index !== 0) {
+      begin += ', '; 
+    }
+    begin += each;
+  });
+
+  begin += ') { ';
+
+  /*
+   * Construct the function body.
+   */
+  loop(rest(this.body), function (each, index) {
+    if (index === this.length - 1) {
+      begin += 'return ';
+    }
+    begin += (each.compile());
+    if (last(begin) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
+      begin += ';';
+    }
+  });
+
+  begin += ' }';
+
+  return begin;
+}
+
+/*
+ * How to compile a 'match' call.
+ * Returns a list of objects.
+ * Each object has:
+ * .method  -> a compiled method call
+ * .pattern -> a list describing the argument pattern
+ */
+function match() {
+  var output = [];
+  loop(this.body, function (each) {
+    if (each.type !== 'Method') {
+      throw new Error('Match can only take method calls. Line ' + this.pos + '.');
+    }
+    output.push({
+      "method"  : each.compile(),
+      "pattern" : first(each.body).body
+    });
+  });
+  return output;
+}
+
+/*
  * Compiles named pattern match functions
  */
 function patternMatchDefinition() {
-  console.log('here')
+  var name    = first(this.body).compile(),
+      methods = first(rest(this.body)).compile(),
+      begin   = '// Define a closure to house the ' + name + ' pattern match function...\n';
+
+  /*
+   * Define callable methods...
+   */
+  begin += (name + ' = (function () {\n\n');
+  begin += ('  // Store each possible method in the closure...\n');
+  begin += ('  var ');
+  loop(methods, function (each, index) {
+    if (index !== 0) {
+      begin += ', ';
+    }
+    begin += ('_method_' + (index + 1));
+  });
+  begin += (';\n');
+  loop(methods, function (each, index) {
+    begin += ('  _method_' + (index + 1) + ' = ' + each.method + ';\n');
+  });
+  begin += '\n';
+  begin += ('  // Return the ' + name + ' function that will be callable to the user...\n');
+  begin += ('  return function ' + name + '() {\n');
+
+  /*
+   * Build the callable function that matches patterns...
+   */
+  loop(methods, function (each, index) {
+    begin += ('\n    // Test pattern ' + (index + 1) + '...\n');
+    if (index === 0) {
+      begin += '    if (';
+    } else {
+      begin += '    } else if (';
+    }
+
+    begin += ('arguments.length === ' + each.pattern.length);
+    loop(each.pattern, function (item, i) {
+      var compiled = item.compile();
+      if (!identifier.test(compiled)) {
+        begin += (' && arguments[' + i + '] === ' + compiled);
+      }
+    });
+
+    begin += (') {\n');
+    begin += ('      return _method_' + (index + 1) + '.apply(null, arguments);\n');
+
+    if (index === this.length - 1) {
+      begin += '    }\n';
+    }
+  });
+
+  /*
+   * Finish off the function construction...
+   */
+  begin += ('  };\n\n');
+  begin += ('}())');
+  
+  this.scope.push(name);
+  return begin;
 }
 
 /*
@@ -442,6 +623,8 @@ function noop() {
 
 module.exports = {
   "library"                : library,
+  "List"                   : list,
+  "Hash"                   : hash,
   "Lazy"                   : lazy,
   "Flag"                   : flag,
   "Value"                  : value,
@@ -451,7 +634,8 @@ module.exports = {
   "Condition"              : condition,
   "Variable"               : noop,
   "Reassignment"           : noop,
-  "Method"                 : noop,
+  "Method"                 : method,
+  "Match"                  : match,
   "FunctionCall"           : functionCall,
   "ComplexCall"            : complexCall,
   "Program"                : program

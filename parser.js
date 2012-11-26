@@ -90,7 +90,7 @@ function isArray(data) {
 function containsFlag(arr) {
   var len = arr.length, i;
   for (i = 0; i < len; i += 1) {
-    if (arr[i].length > 1 && arr[i][0] === '-') {
+    if (!isArray(arr[i]) && arr[i].length > 1 && arr[i][0] === '-') {
       return true;
     }
   }
@@ -226,8 +226,20 @@ function buildTree(arr, lineNo, parentScope) {
             tree.push(new Reassignment(rest(item), curLine, parentScope));
             break;
 
+          case 'list':
+            tree.push(new List(rest(item), curLine, parentScope));
+            break;
+
+          case 'hash':
+            tree.push(new Hash(rest(item), curLine, parentScope));
+            break;
+
           case 'method':
             tree.push(new Method(rest(item), curLine, parentScope));
+            break;
+
+          case 'match':
+            tree.push(new Match(rest(item), curLine, parentScope));
             break;
 
           default:
@@ -351,7 +363,7 @@ function FunctionDefinition(cdr, lineNo, parentScope) {
     allowedPattern = 'NameParam';
   
   // NAME, MATCHCALL, ...
-  } else if (firstItem.type === 'Value' && secondItem.type === 'FunctionCall' && secondItem.fn[0].val === 'match') {
+  } else if (firstItem.type === 'Value' && secondItem.type === 'Match') {
     allowedPattern = true;
     patternMatch = true;
   
@@ -365,7 +377,7 @@ function FunctionDefinition(cdr, lineNo, parentScope) {
   }
 
   if (patternMatch) {
-    return new PatternMatchDefinition(body, vars, lineNo);
+    return new PatternMatchDefinition(body, vars, lineNo, parentScope);
   }
 
   this.vars    = vars;
@@ -405,6 +417,14 @@ function Method(cdr, lineNo, parentScope) {
 }
 Method.prototype = {"compile" : techs.Method};
 
+function Match(cdr, lineNo, parentScope) {
+  this.type  = 'Match';
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
+}
+Match.prototype = {"compile" : techs.Match};
+
 function FunctionCall(car, cdr, lineNo, parentScope) {
   this.type  = 'FunctionCall';
   this.scope = parentScope;
@@ -422,6 +442,20 @@ function ComplexCall(car, cdr, lineNo, parentScope) {
   this.pos   = lineNo;
 }
 ComplexCall.prototype = {"compile" : techs.ComplexCall};
+
+function List(cdr, lineNo, parentScope) {
+  this.type = 'List';
+  this.body = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos  = lineNo;
+}
+List.prototype = {"compile" : techs.List};
+
+function Hash(cdr, lineNo, parentScope) {
+  this.type = 'Hash';
+  this.body = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos  = lineNo;
+}
+Hash.prototype = {"compile" : techs.Hash};
 
 function Program(parseTree, scope) {
   this.vars = scope;
