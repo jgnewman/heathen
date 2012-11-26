@@ -5,10 +5,10 @@
 
 
 var whiteSpace = new RegExp(/\s/),
-    opener     = new RegExp(/\(\[\{/),
-    closer     = new RegExp(/\)\]\}/),
+    opener     = new RegExp(/[\(\[\{]/),
+    closer     = new RegExp(/[\)\]\}]/),
     rexEnder   = new RegExp(/\/[gim]*/),
-    mrexEnder  = new RegExp(/\/\/\/[gim]*/),
+    mrexEnder  = new RegExp(/\/\/\/[gim]+/),
     strings    = {},
     regexes    = {};
 
@@ -52,8 +52,6 @@ comp.skip = function (num, val) {
 function lex(code) {
   var counter  = 0,
       newlines = 1,
-      buildStr = '',
-      buildRex = '',
       newCount,
       output,
       inRex,
@@ -282,6 +280,7 @@ function lex(code) {
                 inRex = false;
                 return comp.exclude;
               } else {
+                regexes[newCount] += char;
                 return comp.exclude;
               }
 
@@ -296,11 +295,15 @@ function lex(code) {
                 inRex = false;
                 return comp.exclude;
               } else {
+                regexes[newCount] += char;
                 return comp.exclude;
               }
             }
 
           case '\n':
+            if (inRex === 'multi') {
+              regexes[newCount] += char;
+            }
             return char + '`line_' + (newlines += 1) + '` ';
 
           default:
@@ -310,8 +313,10 @@ function lex(code) {
              */
             if (char === 'g' || char === 'i' || char === 'm') {
               if (inRex === 'basic') {
+
                 if ((whiteSpace.test(nextChar) || (closer.test(nextChar) && whiteSpace.test(charx2))) 
                     && rexEnder.test(this.slice(0, index))) {
+
                   regexes[newCount] += char;
                   inRex = false;
                   return comp.exclude;
@@ -321,6 +326,7 @@ function lex(code) {
                 }
               
               } else {
+
                 if ((whiteSpace.test(nextChar) || (closer.test(nextChar) && whiteSpace.test(charx2)))
                     && mrexEnder.test(this.slice(0, index))) {
                   regexes[newCount] += char;

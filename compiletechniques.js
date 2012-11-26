@@ -3,7 +3,8 @@
  * Description: How we go about compiling each kind of data.
  */
 
-var library = [],
+var version = '0.1',
+    library = [],
     identifier = new RegExp(/^[a-zA-Z\_\$]/),
     stringMarker = new RegExp(/\`string\_\d+\`/);
 
@@ -193,15 +194,32 @@ function operator() {
   }
 }
 
+/*
+ * How to parse a basic value.
+ */
 function value() {
   return this.val;
 }
 
+/*
+ * Compiles a list of parameters.
+ */
 function paramFn(paramArray) {
   var begin = '(',
-      list = [];
+      list = [],
+      defaults = [],
+      isDef;
   loop(paramArray, function (each, index) {
     var compiled = each.compile();
+    if (compiled === '->') {
+      isDef = last(list);
+      return;
+    }
+    if (isDef) {
+      defaults.push([isDef, compiled]);
+      isDef = false;
+      return;
+    }
     if (index !== 0) {
       begin += ', ';
     }
@@ -211,7 +229,8 @@ function paramFn(paramArray) {
   begin += ')';
   return {
     "compiled" : begin,
-    "list" : list
+    "list"     : list,
+    "defaults" : defaults
   };
 }
 
@@ -343,29 +362,81 @@ function flag() {
 }
 
 /*
+ * The procedure for writing a 'var' statement.
+ */
+function writeVars(toStr, vars) {
+  var build, newVars = [], used = {}, i;
+  if (vars.length) {
+    build = toStr + '  var ';
+
+    /*
+     * Create a new var list with no duplicates.
+     */
+    loop(vars, function (each) {
+      used[each] = true;
+    });
+    for (i in used) {
+      if (Object.prototype.hasOwnProperty.call(used, i)) {
+        newVars.push(i);
+      }
+    }
+
+    /*
+     * Loop over the new list and write vars.
+     */
+    loop(newVars, function (each, index) {
+      if (index % 2 !== 0) {
+        build += ', '
+      }
+      build += each; 
+    });
+    build += ';\n';
+    return build;
+  } else {
+    return toStr;
+  }
+}
+
+/*
  * Compiles named functions that don't use pattern matching.
  */
 function namedFunction() {
   var name   = first(this.body).compile(),
       params = first(rest(this.body)).compile(),
-      begin  = '// Define a closure to house the ' + name + ' function...\n';
+      begin  = '// Define a closure to house the ' + name + ' function...\n',
+      anon_1 = '',
+      anon_2 = '',
+      vars;
 
   begin += (name + ' = (function () {\n\n');
   begin += ('  // Create the ' + name + ' function that will be callable to the user...\n');
   begin += ('  var _output = function ' + name + params.compiled + '{\n');
   loop(rest(rest(this.body)), function (each, index) {
-    if (index === this.length - 1) {
-      begin += '    return ';
+    if (index === this.length - 1 && each.type !== 'Variable' && each.type !== 'Reassignment') {
+      anon_2 += '    return ';
     } else {
-      begin += '    ';
+      anon_2 += '    ';
     }
-    begin += (each.compile());
-    if (last(begin) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
-      begin += ';';
+    anon_2 += (each.compile());
+    if (last(anon_2) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
+      anon_2 += ';';
     }
-    begin += '\n';
+    anon_2 += '\n';
   });
-  begin += ('  };\n\n');
+  anon_2 += ('  };\n\n');
+
+  anon_1 = writeVars('  ', this.vars);
+
+  /*
+   * Insert parameter defaults.
+   */
+  loop(params.defaults, function (each) {
+    anon_1 += ('  if (' + each[0] + ' === undefined) { ' + each[0] + ' = ' + each[1] + '; }\n');
+  });
+
+  anon_1 += anon_2;
+  begin += anon_1;
+
   begin += ("  // Create and store references to each parameter's name and position in the list...\n");
   begin += ('  _output._paramPositions = {');
   loop(params.list, function (each, index) {
@@ -388,10 +459,18 @@ function namedFunction() {
  */
 function anonymousFunction() {
   var params = first(this.body).compile(),
-      begin  = ('function ' + params.compiled + ' {\n');
+      front  = ('function ' + params.compiled + ' {\n'),
+      begin  = '';
+
+  /*
+   * Insert parameter defaults.
+   */
+  loop(params.defaults, function (each) {
+    front += ('  if (' + each[0] + ' === undefined) { ' + each[0] + ' = ' + each[1] + '; }\n');
+  });
 
   loop(rest(this.body), function (each, index) {
-    if (index === this.length - 1) {
+    if (index === this.length - 1 && each.type !== 'Variable' && each.type !== 'Reassignment') {
       begin += '  return ';
     } else {
       begin += '  ';
@@ -404,7 +483,12 @@ function anonymousFunction() {
   });
   begin += ('}');
 
-  return begin;
+  /*
+   * Add in variable definitions
+   */
+  front = writeVars(front, this.vars);
+
+  return front + begin;
 }
 
 /*
@@ -439,7 +523,7 @@ function list() {
 function hash() {
   var keys = [],
       vals = [],
-      begin = '{\n';
+      begin = '{ ';
   loop(this.body, function (each, index) {
     if (index % 2 === 0) {
       keys.push(each.compile());
@@ -451,14 +535,13 @@ function hash() {
     throw new Error('No matching value for key. Line ' + this.pos + '.');
   }
   loop(keys, function (each, index) {
-    begin += '  ';
     begin += (stringMarker.test(each) ? each : '"' + each + '"');
     begin += ' : ';
     begin += vals[index];
     if (index !== this.length - 1) {
-      begin += ',\n';
+      begin += ', ';
     } else {
-      begin += '\n';
+      begin += ' ';
     }
   });
   begin += '}';
@@ -470,7 +553,9 @@ function hash() {
  */
 function method() {
   var params = [],
-      begin  = 'function (';
+      begin  = 'function (',
+      anon_1 = '',
+      anon_2 = '';
 
   if (this.body[0].type !== 'List') {
     throw new Error("Method's first argument must be a list. Line " + this.pos + ".");
@@ -504,14 +589,22 @@ function method() {
    * Construct the function body.
    */
   loop(rest(this.body), function (each, index) {
-    if (index === this.length - 1) {
-      begin += 'return ';
+    if (index === this.length - 1 && each.type !== 'Variable' && each.type !== 'Reassignment') {
+      anon_2 += 'return ';
     }
-    begin += (each.compile());
-    if (last(begin) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
-      begin += ';';
+    anon_2 += (each.compile());
+    if (last(anon_2) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
+      anon_2 += ';';
     }
   });
+
+  /*
+   * Write var statement and put it together with the rest of the function body.
+   * Afterward, get rid of new lines for visual appeal.  Also, put spaces after semis
+   * and cut extraneous whitespace off the beginning.
+   */
+  anon_1 = (writeVars('', this.scope) + ' ' + anon_2).replace(/^\s*/, ' ').replace(/\n/g, ' ').replace(/(\;)(\S)/g, '$1' + ' ' + '$2');
+  begin += anon_1;
 
   begin += ' }';
 
@@ -605,24 +698,332 @@ function patternMatchDefinition() {
 }
 
 /*
+ * Creates an assignment expression and adds variable
+ * names to parent scope.
+ */
+function variable() {
+  var begin = '',
+      vars  = [],
+      vals  = [],
+      that  = this,
+      dot   = new RegExp(/\./),
+      that  = this;
+
+  loop(this.body, function (each, index) {
+    if (index % 2 === 0) {
+      if (each.type !== 'Value' || !identifier.test(each.val) || dot.test(each.val)) {
+        throw new Error('Bad variable assignment. Line ' + that.pos + '.');
+      }
+      vars.push(each);
+    } else {
+      vals.push(each);
+    }
+  });
+  loop(vars, function (each, index) {
+    var compiled = each.compile();
+    begin += (compiled + ' = ' + (vals[index] ? vals[index].compile() : 'undefined') + ';\n');
+    that.scope.push(compiled);
+  });
+  return begin;
+}
+
+/*
+ * Compiles a 'do' call into 
+ */
+function block() {
+  var front = '(function () { ',
+      begin = '';
+  loop(this.body, function (each, index) {
+    if (index === this.length - 1 && each.type !== 'Variable' && each.type !== 'Reassignment') {
+      begin += 'return ';
+    } else {
+      begin += '';
+    }
+    begin += (each.compile());
+    if (last(begin) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
+      begin += ';';
+    }
+    begin += ' ';
+  });
+  front = writeVars(front, this.scope);
+  return front.replace(/\n/g, ' ') + begin + '}())';
+}
+
+/*
+ * Forms code that exports from a module.
+ */
+function exportCall() {
+  var build = '// Export module code...\n  (function () {\n'
+  if (this.body.length < 1 || this.body.length > 2) {
+    throw new Error('The export function takes only 1 or 2 arguments. Line ' + this.pos + '.');
+  }
+  if (this.body.length === 1) {
+    build += ('    var _export = ' + this.body[0].compile() + ', _moduleName = "heathen";\n\n');
+  } else {
+    build += ('    var _export = ' + this.body[1].compile() + ', _moduleName = ' + this.body[0].compile() + ';\n\n');
+  }
+  build += ('    // AMD\n');
+  build += ('    if (_HN_global.define && typeof _HN_global.define === "function" && _HN_global.define.amd) {\n');
+  build += ('      _HN_global.define(_moduleName, [], _export);\n\n');
+  build += ('    // Node\n');
+  build += ('    } else if (module && module.exports) {\n');
+  build += ('      module.exports = _export;\n\n');
+  build += ('    // Browser\n');
+  build += ('    } else {\n');
+  build += ('      _HN_global[_moduleName] = _export;\n');
+  build += ('    }\n');
+
+  build += '  }())';
+  return build;
+}
+
+/*
+ * Forms code the requires code into a module.
+ */
+function requireCall() {
+  var begin = '';
+  if (this.args.length > 1) {
+    throw new Error('The require function can only take 1 arguments. Line ' + this.pos + '.');
+  }
+  begin += (this.fn + '(' + this.args[0].compile() + ')');
+  library.push('require');
+  return begin;
+}
+
+/*
+ * Finds a value in an array.
+ */
+function findInScope(val, scope) {
+  var found = false;
+  loop(scope, function (each) {
+    if (each === val) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+/*
+ * Defines a basic reassignment.
+ */
+function basicSetter() {
+  var compiled;
+  if (this.body.length !== 2) {
+    throw new Error('The set function must take 2 arguments. Line ' + this.pos + '.');
+  }
+  compiled = this.body[0].compile();
+  if (!findInScope(compiled, this.scope)) {
+    throw new Error('Nice try.  No global variables allowed. Line ' + this.pos + '.');
+  }
+  if (/\./.test(compiled)) {
+    throw new Error('Map keys must be set using the setKey function. Line ' + this.pos + '.');
+  }
+  return compiled + ' = ' + this.body[1].compile();
+}
+
+/*
+ * Redefines a key in a map.
+ */
+function keySetter() {
+  var compiled;
+  if (this.body.length !== 3) {
+    throw new Error('The setKey function must take 3 arguments. Line ' + this.pos + '.');
+  }
+  compiled = this.body[0].compile();
+  if (compiled === '_HN_global') {
+    throw new Error('Nice try.  No global variables allowed. Line ' + this.pos + '.');
+  }
+  return compiled + '[' + this.body[1].compile() + '] = ' + this.body[2].compile();
+}
+
+/*
+ * Deletes a key in a map.
+ */
+function keyDeleter() {
+  var compiled;
+  if (this.body.length !== 2) {
+    throw new Error('The setKey function must take 2 arguments. Line ' + this.pos + '.');
+  }
+  compiled = this.body[0].compile();
+  if (compiled === '_HN_global') {
+    throw new Error('Nice try.  No touching global variables. Line ' + this.pos + '.');
+  }
+  return '(delete ' + compiled + '[' + this.body[1].compile() + ']' + ')';
+}
+
+/*
+ * Determines which kind of reassignment to write.
+ */
+function reassignment() {
+  if (this.fnName === 'set') {
+    return basicSetter.call(this);
+  } else if (this.fnName === 'setKey') {
+    return keySetter.call(this);
+  } else if (this.fnName === 'unsetKey') {
+    return keyDeleter.call(this);
+  }
+}
+
+/*
+ * How to compile a user's class
+ * function InitializerName () { ... }
+ * HN.classes.new(InitializerName, { ... })
+ */
+function userClass() {
+  var newBody = [],
+      len     = this.hash.body.length,
+      name    = this.name.compile(),
+      extend  = (this.extend ? this.extend.compile() : null),
+      upCase  = new RegExp(/^[A-Z]/),
+      func    = new RegExp(/^\s*function\s*/),
+      begin   = '',
+      initializer,
+      i;
+
+  //console.log(this);
+
+  if (!len) {
+    throw new Error('Sorry but creating an empty class is sort of pointless. Line ' + this.pos + '.');
+  }
+  if (!upCase.test(name)) {
+    throw new Error('Class names must begin with an uppercase letter. Line ' + this.pos + '.');
+  }
+
+  /*
+   * Grab the initializer out of the class body.
+   */
+  for (i = 0; i < len; i += 1) {
+    if (this.hash.body[i].val === 'initializer') {
+      initializer = this.hash.body[i + 1];
+      i += 1;
+    } else {
+      newBody.push(this.hash.body[i]);
+    }
+  }
+  this.hash.body = newBody;
+
+  begin += ('function ' + name + initializer.compile().replace(func, '') + '\n');
+  begin += ('HN.classes.' + (extend ? 'extend' : 'new') + '(');
+  begin += (name + ', ' + (extend ? extend + ', ' : '') + this.hash.compile() + ')');
+
+  library.push('classes');
+  return begin;
+}
+
+/*
+ * Fixes variables in strings.
+ */
+function parseString(str) {
+  var marker = new RegExp(/\#\{([^\}]+)\}/g),
+      quote  = str[0];
+  return str.replace(marker, quote + ' + $1 + ' + quote)
+            .replace(/\n\s*/g, ' ');
+}
+
+/*
+ * Parse multi-line strings
+ */
+function parseMultiString(str) {
+  var marker = new RegExp(/\#\{([^\}]+)\}/g),
+      quote  = str[0];
+  return str.replace(marker, '" + $1 + "')
+            .replace(/^\"\"\"(\n*)/, '"')
+            .replace(/(\n*)\"\"\"/, '"')
+            .replace(/\n/g, '\\n');
+}
+
+/*
+ * Parse multi-line regexes
+ */
+function parseMultiRex(rex) {
+  return rex.replace(/^\/\/\//, '/')
+            .replace(/\/\/\/([gim]*)?$/, '/' + '$1')
+            .replace(/(^|[^\\])\;[^\n\r\t]*/g, '$1')
+            .replace(/\s*/g, '');
+}
+
+/*
+ * Drops multiline strings and multiline regexes back into the code.
+ */
+function populateMultis(code, strings, regexes) {
+  var marker = new RegExp(/\`(multistring|multiregex)\_(\d+)\`/),
+      match  = code.match(marker),
+      isString,
+      front,
+      back;
+
+  if (match && match.index > -1) {
+    front    = code.slice(0, match.index);
+    back     = code.slice(match.index + match[0].length);
+    isString = match[0].slice(6)[0] === 's';
+    if (isString) {
+      return front + parseMultiString(strings[match[2]]) + populateMultis(back, strings, regexes);
+    } else {
+      return front + parseMultiRex(regexes[match[2]]) + populateMultis(back, strings, regexes);
+    }
+  }
+  return code;
+}
+
+/*
+ * Drops strings and regexes back into the code.
+ */
+function populateStrReg(code, strings, regexes) {
+  var marker = new RegExp(/\`(string|regex)\_(\d+)\`/),
+      match  = code.match(marker),
+      isString,
+      front,
+      back;
+
+  if (match && match.index > -1) {
+    front    = code.slice(0, match.index);
+    back     = code.slice(match.index + match[0].length);
+    isString = match[0].slice(1)[0] === 's';
+    if (isString) {
+      return front + parseString(strings[match[2]]) + populateStrReg(back, strings, regexes);
+    } else {
+      return front + regexes[match[2]] + populateStrReg(back, strings, regexes);
+    }
+  }
+  return populateMultis(code, strings, regexes);
+}
+
+/*
  * Calls .compile() for every item in the parse tree.
  * Puts the compiled code together.
  */
 function program() {
-  var out = [];
-  loop(this.parseTree, function (each) {
-    out.push(each.compile());
+  var frontWrap = '',
+      backWrap  = '\n}(this));\n'
+      begin     = '';
+
+  frontWrap += ('/*\n');
+  frontWrap += (' * Code generated with Heathen ' + version + '.\n');
+  frontWrap += (' * https://github.com/jgnewman/heathen\n');
+  frontWrap += (' */\n\n');
+
+  frontWrap += ('(function (_HN_global) {\n\n');
+
+  loop(this.parseTree, function (each, index) {
+    begin += ('  ' + each.compile());
+    if (last(begin) !== '}' || each.type === 'Variable' || each.type === 'Reassignment') {
+      begin += ';\n';
+    }
+    begin += '\n';
   });
-  return out.join('\n');
+
+  begin = frontWrap + writeVars('', this.vars) + begin.replace(/\;(\s*\;)*/g, ';') + backWrap;
+
+  /*
+   * Don't forget to replace strings and regexes.
+   */
+  return populateStrReg(begin, this.strings, this.regexes);
 }
 
-
-function noop() {
-  return 'no compile technique exists';
-}
 
 module.exports = {
   "library"                : library,
+  "version"                : version,
   "List"                   : list,
   "Hash"                   : hash,
   "Lazy"                   : lazy,
@@ -632,11 +1033,15 @@ module.exports = {
   "FunctionDefinition"     : functionDefinition,
   "PatternMatchDefinition" : patternMatchDefinition,
   "Condition"              : condition,
-  "Variable"               : noop,
-  "Reassignment"           : noop,
+  "Variable"               : variable,
+  "Reassignment"           : reassignment,
   "Method"                 : method,
+  "Block"                  : block,
   "Match"                  : match,
   "FunctionCall"           : functionCall,
   "ComplexCall"            : complexCall,
+  "Export"                 : exportCall,
+  "Require"                : requireCall,
+  "UserClass"              : userClass,
   "Program"                : program
 };

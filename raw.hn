@@ -1,2 +1,2 @@
 
-{key val key2 val2}
+(fn |x -> 4| x)

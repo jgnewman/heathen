@@ -90,7 +90,7 @@ function isArray(data) {
 function containsFlag(arr) {
   var len = arr.length, i;
   for (i = 0; i < len; i += 1) {
-    if (!isArray(arr[i]) && arr[i].length > 1 && arr[i][0] === '-') {
+    if (!isArray(arr[i]) && arr[i].length > 1 && arr[i][0] === '-' && arr[i] !== '->') {
       return true;
     }
   }
@@ -223,7 +223,15 @@ function buildTree(arr, lineNo, parentScope) {
             break;
 
           case 'set':
-            tree.push(new Reassignment(rest(item), curLine, parentScope));
+            tree.push(new Reassignment('set', rest(item), curLine, parentScope));
+            break;
+
+          case 'setKey':
+            tree.push(new Reassignment('setKey', rest(item), curLine, parentScope));
+            break;
+
+          case 'unsetKey':
+            tree.push(new Reassignment('unsetKey', rest(item), curLine, parentScope));
             break;
 
           case 'list':
@@ -238,8 +246,24 @@ function buildTree(arr, lineNo, parentScope) {
             tree.push(new Method(rest(item), curLine, parentScope));
             break;
 
+          case 'do':
+            tree.push(new Block(rest(item), curLine, parentScope));
+            break;
+
+          case 'export':
+            tree.push(new Export(rest(item), curLine, parentScope));
+            break;
+
+          case 'require':
+            tree.push(new Require(first(item), rest(item), curLine, parentScope));
+            break;
+
           case 'match':
             tree.push(new Match(rest(item), curLine, parentScope));
+            break;
+
+          case 'class':
+            tree.push(new UserClass(rest(item), curLine, parentScope));
             break;
 
           default:
@@ -257,10 +281,10 @@ function buildTree(arr, lineNo, parentScope) {
       curLine = parseLineNo(item);
 
     } else {
-      if (first(item) === '-' && item.length > 1) {
+      if (first(item) === '-' && item.length > 1 && item !== '->') {
         tree.push(new Flag(item));
       } else {
-        tree.push(new Value(item));
+        tree.push(new Value(item, curLine));
       }
     }
   }
@@ -390,32 +414,54 @@ function FunctionDefinition(cdr, lineNo, parentScope) {
 FunctionDefinition.prototype = {"compile" : techs.FunctionDefinition};
 
 function Condition(cdr, lineNo, parentScope) {
-  this.type = 'Condition';
-  this.body = lazify(buildTree(cdr, lineNo, parentScope));
-  this.pos  = lineNo;
+  this.type  = 'Condition';
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
 }
 Condition.prototype = {"compile" : techs.Condition};
 
 function Variable(cdr, lineNo, parentScope) {
-  this.type = 'Variable';
-  this.body = lazify(buildTree(cdr, lineNo, parentScope));
-  this.pos  = lineNo;
+  this.type  = 'Variable';
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
 }
 Variable.prototype = {"compile" : techs.Variable};
 
-function Reassignment(cdr, lineNo, parentScope) {
-  this.type = 'Reassignment';
-  this.body = lazify(buildTree(cdr, lineNo, parentScope));
-  this.pos  = lineNo; 
+function Reassignment(fnName, cdr, lineNo, parentScope) {
+  this.type   = 'Reassignment';
+  this.fnName = fnName;
+  this.scope  = parentScope;
+  this.body   = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos    = lineNo; 
 }
 Reassignment.prototype = {"compile" : techs.Reassignment};
 
 function Method(cdr, lineNo, parentScope) {
-  this.type = 'Method';
-  this.body = lazify(buildTree(cdr, lineNo, parentScope));
-  this.pos  = lineNo;
+  this.type  = 'Method';
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
 }
 Method.prototype = {"compile" : techs.Method};
+
+function Export(cdr, lineNo, parentScope) {
+  this.type  = 'Export';
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
+}
+Export.prototype = {"compile" : techs.Export};
+
+function Block(cdr, lineNo, parentScope) {
+  this.type  = 'Block';
+  this.vars  = [];
+  this.scope = parentScope;
+  this.body  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
+}
+Block.prototype = {"compile" : techs.Block};
 
 function Match(cdr, lineNo, parentScope) {
   this.type  = 'Match';
@@ -443,6 +489,15 @@ function ComplexCall(car, cdr, lineNo, parentScope) {
 }
 ComplexCall.prototype = {"compile" : techs.ComplexCall};
 
+function Require(car, cdr, lineNo, parentScope) {
+  this.type  = 'Require';
+  this.scope = parentScope;
+  this.fn    = 'HN.require';
+  this.args  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
+}
+Require.prototype = {"compile" : techs.Require};
+
 function List(cdr, lineNo, parentScope) {
   this.type = 'List';
   this.body = lazify(buildTree(cdr, lineNo, parentScope));
@@ -450,16 +505,35 @@ function List(cdr, lineNo, parentScope) {
 }
 List.prototype = {"compile" : techs.List};
 
-function Hash(cdr, lineNo, parentScope) {
+function Hash(cdr, lineNo, parentScope, manualBody) {
   this.type = 'Hash';
-  this.body = lazify(buildTree(cdr, lineNo, parentScope));
+  this.body = manualBody || lazify(buildTree(cdr, lineNo, parentScope));
   this.pos  = lineNo;
 }
 Hash.prototype = {"compile" : techs.Hash};
 
-function Program(parseTree, scope) {
+function UserClass(cdr, lineNo, parentScope) {
+  this.type  = 'UserClass';
+  this.scope = parentScope;
+  this.args  = lazify(buildTree(cdr, lineNo, parentScope));
+  this.pos   = lineNo;
+  this.name  = this.args[0];
+
+  if (this.args[1].val === '=>') {
+    this.extend = this.args[2];
+    this.hash   = new Hash(null, lineNo, parentScope, this.args.slice(3));
+  } else {
+    this.extend = null;
+    this.hash   = new Hash(null, lineNo, parentScope, rest(this.args));
+  }
+}
+UserClass.prototype = {"compile" : techs.UserClass};
+
+function Program(parseTree, scope, strings, regexes) {
   this.vars = scope;
   this.parseTree = lazify(parseTree, null, this.vars);
+  this.strings = strings;
+  this.regexes = regexes;
 }
 Program.prototype = {"compile" : techs.Program};
 
@@ -475,7 +549,7 @@ module.exports = {
 
     codeList     = parse(code, []);
     parseTree    = lazify(buildTree(codeList, null, initialScope));
-    compiledCode = (new Program(parseTree, initialScope)).compile();
+    compiledCode = (new Program(parseTree, initialScope, codeStrings, codeRegexes)).compile();
 
     return compiledCode;
   }
