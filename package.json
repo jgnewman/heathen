@@ -1,0 +1,25 @@
+{
+    "name"         : "heathen",
+    "version"      : "0.0.1",
+    "author"       : "John Newman <rescuecreative@gmail.com>",
+    "description"  : "An object-oriented Lisp dialect targeting JavaScript",
+    "keywords"     : [
+                         "language",
+                         "compiler",
+                         "lisp",
+                         "dialect",
+                         "javascript",
+                         "preprocessor"
+                     ],
+    "main"         : "heathen.js",
+    "bin"          : {
+                         "heathen" : "./bin/heathen"
+                     },
+    "dependencies" : {
+                         "uglify-js" : ">=2.2.1"
+                     },
+    "repository"   : {
+                         "type" : "git",
+                         "url"  : "https://github.com/jgnewman/heathen.git"
+                     } 
+}

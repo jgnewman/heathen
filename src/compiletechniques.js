@@ -4,7 +4,7 @@
  */
 
 var libs         = require('./library'),
-    version      = '0.1',
+    version      = '0.0.1',
     library      = [],
     identifier   = new RegExp(/^[a-zA-Z\_\$]/),
     stringMarker = new RegExp(/\`string\_\d+\`/);

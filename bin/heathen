@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+
+
+var fs       = require('fs'),
+    uglify   = require('uglify-js2'),
+    argParse = require('../lib/argparser').parse,
+    version  = require('../lib/compiletechniques').version,
+    bashArgs = process.argv.slice(2),
+    usage    = [
+        ""
+      , "  Usage: heathen [input] [options]"
+      , ""
+      , "  Input: The path to the file containing Heathen code."
+      , ""
+      , "  Options:"
+      , ""
+      , "    -v, --version   Display the version of heathen."
+      , "    -h, --help      Display help information."
+      , "    -o, --output    The path to the file where you want to place compiled code."
+      , ""
+    ].join("\n"),
+    options = {},
+    args;
+
+/*
+ * Define an example procedure that can be called in case
+ * of the right arguments.
+ */
+function processOptions(argObj) {
+  if (args._noflag) {
+    options.input = args._noflag;
+  }
+  if (args['-o']) {
+    options.output = args['-0'];
+  }
+  console.log(options);
+  process.exit(0);
+}
+
+/*
+ * Parse arguments that came in from the command line.
+ * See lib/argparser.js for usage details.
+ */
+args = argParse(bashArgs, [
+  ["-v", "--version"],
+  ["-h", "--help"],
+  ["-o", "--output"]
+]);
+
+/*
+ * Determine what to do based on the arguments we have.
+ */
+if (args["-v"]) {
+  console.log(version);
+  process.exit(0);
+
+} else if (args["-h"]) {
+  console.log(usage);
+  process.exit(0);
+
+} else {
+  processOptions(args);
+}
