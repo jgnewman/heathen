@@ -14,6 +14,70 @@
 
 module.exports = {
 
+  "first" : function () {
+    return function (data) {
+      /*
+       * Return the first item in data
+       */
+       return data[0];
+    };
+  },
+
+  "rest" : function () {
+    return function (data) {
+      /*
+       * Return all but the first item in data
+       */
+       return Array.prototype.slice.call(data, 1);
+    };
+  },
+
+  "lead" : function () {
+    return function (data) {
+      /*
+       * Return all but the last item in data
+       */
+       return Array.prototype.slice.call(data, 0, data.length - 1);
+    };
+  },
+
+  "last" : function () {
+    return function (data) {
+      /*
+       * Return the last item in data
+       */
+       return data[data.length - 1];
+    };
+  },
+
+  "buildRange" : function () {
+    return function (start, stop, numerical, inclusive) {
+      /*
+       * In case we build a really large range we don't want to actually write
+       * 100,000 items into the file.  Instead we'll build the range in memory.
+       *
+       * We could do this in less code but it wouldn't necessarily be as fast.
+       */
+      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
+          accum = [],
+          i;
+
+      if (!numerical) {
+        start = chars.indexOf(start);
+        stop  = chars.indexOf(stop);
+        for (i = start; i < (inclusive ? stop + 1 : stop); i += 1) {
+          accum.push(chars[i]);
+        }
+        return accum;
+      }
+
+      for (i = start; i < (inclusive ? stop + 1 : stop); i += 1) {
+        accum.push(i);
+      }
+      return accum;
+    };
+  },
+
   "registerModuleAtoms" : function () {
     return function (/* arguments */) {
       /*

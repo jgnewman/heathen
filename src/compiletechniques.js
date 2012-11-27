@@ -205,6 +205,12 @@ function value() {
     library.push('registerModuleAtoms');
     return 'HN.atoms["' + rest(this.val) + '"]';
   } else {
+    /*
+     * Disallow creating global variables and/or modifying library code.
+     */
+    if (/^_HN_global$|^HN[\.\[]/.test(this.val)) {
+      throw new Error('Nice try.  No creating globals and no modifying library code allowed. Line ' + this.pos + '.');
+    }
     return this.val;
   }
 }
@@ -243,15 +249,58 @@ function paramFn(paramArray) {
 }
 
 /*
+ * Compiles the special form 'at' function.
+ */
+function atFn(args, pos) {
+  var collection, key;
+  if (args.length !== 2) {
+    throw new Error("The 'at' function must be called with 2 arguments. Line " + pos + ".");
+  }
+  collection = args[0].compile();
+  key = args[1].compile();
+  return collection + '[' + key + ']';
+}
+
+/*
+ * Compiles the special form 'new' function.
+ */
+function newFn(args, pos) {
+  var begin, className, restArgs;
+  if (!args.length) {
+    throw new Error("The 'new' function must be called with at least 1 argument. Line " + pos + ".");
+  }
+  
+  begin = 'new ';
+  className = args[0];
+  restArgs = rest(args);
+  
+  begin += (className.compile() + '(');
+  loop(restArgs, function (each, index) {
+    if (index !== 0) {
+      begin += ', ';
+    }
+    begin += each.compile();
+  });
+  begin += ')';
+  return begin;
+}
+
+/*
  * Creates a basic function call.
  */
 function functionCall() {
-  var begin, typeIsFunc;
+  var begin, typeIsFunc, compiled;
 
   switch (this.fn[0].val) {
 
     case 'param':
       return paramFn(this.args);
+
+    case 'at':
+      return atFn(this.args, this.pos);
+
+    case 'new':
+      return newFn(this.args, this.pos);
 
     default:
       typeIsFunc = (this.fn[0].type === 'FunctionDefinition' || this.fn[0].type === 'PatternMatchDefinition');
@@ -259,7 +308,34 @@ function functionCall() {
       if (typeIsFunc) {
         begin += '(';
       }
-      begin += this.fn[0].compile() + '(';
+      compiled = this.fn[0].compile();
+      switch (compiled) {
+
+        case 'first':
+          library.push('first');
+          compiled = 'HN.first';
+          break;
+
+        case 'rest':
+          library.push('rest');
+          compiled = 'HN.rest';
+          break;
+
+        case 'lead':
+          library.push('lead');
+          compiled = 'HN.lead';
+          break;
+
+        case 'last':
+          library.push('last');
+          compiled = 'HN.last';
+          break;
+
+        default:
+          break;
+      }
+
+      begin += compiled + '(';
       loop(this.args, function (each, index) {
         if (index !== 0) {
           begin += ', ';
@@ -514,7 +590,49 @@ function functionDefinition() {
  * How to compile the basic array.
  */
 function list() {
-  var begin = '[';
+  var charRangeMarker = new RegExp(/^\`string\_\d+\`(\.\.|\.\.\.)\`string\_\d+\`$/),
+      numRangeMarker = new RegExp(/^\d+(\.\.|\.\.\.)\d+$/),
+      inclusiveMarker = new RegExp(/\.\.\./),
+      inclusive,
+      compiled,
+      begin,
+      front,
+      back,
+      i;
+
+  /*
+   * Build alphabetical ranges if we have 'em.
+   */
+  if (this.body.length === 1 && this.body[0].type === 'Value' && charRangeMarker.test(this.body[0].val)) {
+    library.push('buildRange');
+    compiled = this.body[0].compile();
+    if (inclusiveMarker.test(compiled)) {
+      inclusive = true;
+    }
+    front = compiled.match(/^\`string\_\d+\`/)[0];
+    back  = compiled.match(/\`string\_\d+\`$/)[0];
+    begin = 'HN.buildRange(' + front + ', ' + back + ', false, ' + inclusive + ')';
+    return begin;
+
+  /*
+   * Build numerical ranges if we have 'em.
+   */
+  } else if (this.body.length === 1 && this.body[0].type === 'Value' && numRangeMarker.test(this.body[0].val)) {
+    library.push('buildRange');
+    compiled = this.body[0].compile();
+    if (inclusiveMarker.test(compiled)) {
+      inclusive = true;
+    }
+    front = compiled.match(/^\d+/)[0];
+    back  = compiled.match(/\d+$/)[0];
+    begin = 'HN.buildRange(' + front + ', ' + back + ', true, ' + inclusive + ')';
+    return begin;
+  }
+
+  /*
+   * Otherwise...
+   */
+  begin = '[';
   loop(this.body, function (each, index) {
     if (index !== 0) {
       begin += ', ';
@@ -577,7 +695,7 @@ function method() {
       throw new Error('You can not perform operations inside argument patterns. Line ' + this.pos + '.');
     }
     if (identifier.test(each.val)) {
-      params.push(each.val);
+      params.push(each.compile());
     }
   });
 

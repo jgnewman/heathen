@@ -530,9 +530,10 @@ TO-DO
 - any, all, not functions
 - map function
 - type checking lib
-- retrieval syntax for arrays (at function)
-- add ranges
-- disallow setKey on HN.atoms
-- first, rest, lead, last functions
-- new function
+
+x retrieval syntax for arrays (at function)
+x add ranges
+x disallow setKey on HN.atoms
+x first, rest, lead, last functions
+x new function
 
