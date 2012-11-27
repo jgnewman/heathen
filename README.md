@@ -9,7 +9,7 @@
 |  ||  |  || |  |----//|  ||  |  ||     |   |     ||  |  ||  |  ||   ----/ ||  |  \\     |
 |___\\ |___\\|______// |___\\ |___\\    /___\     ||___\ ||___\ ||______/  ||___\  \\_____\
 
---------------------- An Object-Oriented Lisp Dialect for JavaScript ----------------------
+---------------------- A Multi-Paradigm Lisp Dialect for JavaScript -----------------------
 
 ```
 
@@ -306,10 +306,10 @@ Heathen gives you a convenient way to reference specific, tiny objects whose val
 change and can never equal any other value.
 
 ```
-(= @atom1 @atom2)
+(= @myAtom @myAtom)
 ;=> true
 
-(= @atom1 anythingElseEver)
+(= @myAtom anythingElseEver)
 ;=> false
 ```
 
@@ -348,6 +348,7 @@ In Heathen, you can create lazy values instead:
 - Placing a colon in front of a value makes it lazy.
 - When a value is lazy, it means you have to call it in order to actually see its value.
 - You can place a colon in front of _anything_ to make it lazy.
+- Notice, you can declare multiple variables at once with a single call to `let`.
 
 ### Pattern Matching
 
@@ -368,11 +369,11 @@ an alternate function body depending on the shape of the arguments when they com
 The first argument you pass to `method` needs to be an array.  That array is where you specify
 what the arguments should look like in order to execute the rest of the method.
 
-The first method expects one argument whose value is `0`.  The second method expects one argument
+In the above example the first method expects one argument whose value is `0`.  The second method expects one argument
 whose value is `1`.  The last method expects one argument whose value could be anything.
 
 When we call `(factorial 4)`, for example, that `4` will be tested against each method sequentially.
-Since it only matches the third method, the third method will be the one executed on until it
+Since it only matches the third method, the third method will be the one executed. This will continue until it
 passes in arguments that match a different method.
 
 **Things You Should Know**

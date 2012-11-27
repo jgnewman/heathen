@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>comment</key>
+  <string>Heathen Syntax: version 1.0</string>
+  <key>fileTypes</key>
+  <array>
+    <string>hn</string>
+    <string>heathen</string>
+  </array>
+  <key>foldingStartMarker</key>
+  <string>^.*\{\(*[^\)]*\)*\s*|.*[\[{]\s*$</string>
+  <key>foldingStopMarker</key>
+  <string>^\s*$|^\s*[}\]]\s*$</string>
+  <key>keyEquivalent</key>
+  <string>^~S</string>
+  <key>name</key>
+  <string>Heathen</string>
+  <key>patterns</key>
+  <array>
+
+    <!-- function definitions -->
+    <dict>
+      <key>captures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>support.constant.dom.hn</string>
+        </dict>
+        <key>2</key>
+        <dict>
+          <key>name</key>
+          <string>keyword.operator.hn</string>
+        </dict>
+        <key>3</key>
+        <dict>
+          <key>name</key>
+          <string>entity.name.function.hn</string>
+        </dict>
+        <key>4</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+        <key>5</key>
+        <dict>
+          <key>name</key>
+          <string>variable.parameter.function.hn</string>
+        </dict>
+        <key>6</key>
+        <dict>
+          <key>name</key>
+          <string>variable.parameter.function.hn</string>
+        </dict>
+      </dict>
+      <key>comment</key>
+      <string>functions...  (#def name |param| ...)</string>
+      <key>match</key>
+      <string>(?x: \(\s* (fn) (\s+ ([^\s\|\(\)]+) )? (\| ([^\|]*) \| | \s*\(\s* (match) \b )?)</string>
+      <key>name</key>
+      <string>meta.function.hn</string>
+    </dict>
+
+    <!-- class definitions -->
+    <dict>
+      <key>captures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>keyword.operator.hn</string>
+        </dict>
+        <key>2</key>
+        <dict>
+          <key>name</key>
+          <string>support.class.hn</string>
+        </dict>
+        <key>3</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+        <key>4</key>
+        <dict>
+          <key>name</key>
+          <string>keyword.operator.hn</string>
+        </dict>
+        <key>5</key>
+        <dict>
+          <key>name</key>
+          <string>support.class.hn</string>
+        </dict>
+      </dict>
+      <key>comment</key>
+      <string>match classes...  (class Person ...)</string>
+      <key>match</key>
+      <string>\(\s*(class)\s+([A-Z][a-zA-Z0-9\_\$]*)(\s+(\=\>)\s+([A-Z][a-zA-Z0-9\_\$]*))?</string>
+      <key>name</key>
+      <string>meta.function.hn</string>
+    </dict>
+
+    <!-- params on a subsequent line -->
+    <dict>
+      <key>captures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>variable.parameter.function.hn</string>
+        </dict>
+      </dict>
+      <key>comment</key>
+      <string>match params on subsequent line...  |x y z|</string>
+      <key>match</key>
+      <string>\|([^\|]*)\|</string>
+      <key>name</key>
+      <string>meta.function.hn</string>
+    </dict>
+
+    <!-- single line regex -->
+    <dict>
+      <key>captures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+        <key>2</key>
+        <dict>
+          <key>name</key>
+          <string>constant.character.escape.hn</string>
+        </dict>
+        <key>3</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+        <key>4</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+        <key>5</key>
+        <dict>
+          <key>name</key>
+          <string>null</string>
+        </dict>
+      </dict>
+      <key>comment</key>
+      <string>match regex...  /whatever/gim</string>
+      <key>match</key>
+      <string>(^|\s)(\/([^\s\/]|\\[\s\/])+\/(gim|gmi|mig|mgi|igm|img|gi|ig|gm|mg|mi|im|g|i|m)?)(\s|$|\))</string>
+      <key>name</key>
+      <string>meta.function.hn</string>
+    </dict>
+
+    <!-- block regex -->
+    <dict>
+      <key>begin</key>
+      <string>(^|\s)\/\/\/</string>
+      <key>beginCaptures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.begin.hn</string>
+        </dict>
+      </dict>
+      <key>end</key>
+      <string>\/\/\/\s*(gim|gmi|mig|mgi|igm|img|gi|ig|gm|mg|mi|im|g|i|m)?(?=\s|$|\))</string>
+      <key>endCaptures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.end.hn</string>
+        </dict>
+      </dict>
+      <key>name</key>
+      <string>string.regexp.hn</string>
+      <key>patterns</key>
+      <array>
+        <dict>
+          <key>match</key>
+          <string>\\.</string>
+          <key>name</key>
+          <string>constant.character.escape.hn</string>
+        </dict>
+      </array>
+    </dict>
+
+    <!-- single quote strings -->
+    <dict>
+      <key>begin</key>
+      <string>'</string>
+      <key>beginCaptures</key>
+      <dict>
+        <key>0</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.begin.hn</string>
+        </dict>
+      </dict>
+      <key>end</key>
+      <string>'</string>
+      <key>endCaptures</key>
+      <dict>
+        <key>0</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.end.hn</string>
+        </dict>
+      </dict>
+      <key>name</key>
+      <string>string.quoted.single.hn</string>
+      <key>patterns</key>
+      <array>
+        <dict>
+          <key>match</key>
+          <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
+          <key>name</key>
+          <string>constant.character.escape.hn</string>
+        </dict>
+      </array>
+    </dict>
+
+    <!-- double quote strings -->
+    <dict>
+      <key>begin</key>
+      <string>"</string>
+      <key>beginCaptures</key>
+      <dict>
+        <key>0</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.begin.hn</string>
+        </dict>
+      </dict>
+      <key>end</key>
+      <string>"</string>
+      <key>endCaptures</key>
+      <dict>
+        <key>0</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.string.end.hn</string>
+        </dict>
+      </dict>
+      <key>name</key>
+      <string>string.quoted.double.hn</string>
+      <key>patterns</key>
+      <array>
+        <dict>
+          <key>match</key>
+          <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]|37[0-7]?|[4-7][0-7]?|.)</string>
+          <key>name</key>
+          <string>constant.character.escape.hn</string>
+        </dict>
+      </array>
+    </dict>
+
+    <!-- multi-line comments -->
+    <dict>
+      <key>begin</key>
+      <string>\;\*</string>
+      <key>captures</key>
+      <dict>
+        <key>0</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.comment.hn</string>
+        </dict>
+      </dict>
+      <key>end</key>
+      <string>\*\;</string>
+      <key>name</key>
+      <string>comment.block.hn</string>
+    </dict>
+
+    <!-- single-line comments -->
+    <dict>
+      <key>captures</key>
+      <dict>
+        <key>1</key>
+        <dict>
+          <key>name</key>
+          <string>punctuation.definition.comment.hn</string>
+        </dict>
+      </dict>
+      <key>match</key>
+      <string>(\;).*$\n?</string>
+      <key>name</key>
+      <string>comment.line.double-slash.hn</string>
+    </dict>
+
+    <!-- argument flags -->
+    <dict>
+      <key>match</key>
+      <string>\-[^\s\)\d\.][^\s\)]*</string>
+      <key>name</key>
+      <string>variable.parameter.function.hn</string>
+    </dict>
+
+    <!-- numbers -->
+    <dict>
+      <key>match</key>
+      <string>\b\-?([\.])[0-9][0-9\.\^\e]*|\b\-?[0-9][0-9\.\^\e]*</string>
+      <key>name</key>
+      <string>constant.language.boolean.true.hn</string>
+    </dict>
+
+    <!-- boolean true -->
+    <dict>
+      <key>match</key>
+      <string>\btrue\b</string>
+      <key>name</key>
+      <string>constant.language.boolean.true.hn</string>
+    </dict>
+
+    <!-- atoms, @atom -->    
+    <dict>
+      <key>match</key>
+      <string>\@[^\s\)]+</string>
+      <key>name</key>
+      <string>constant.language.boolean.true.hn</string>
+    </dict>
+
+    <!-- lazy values, :value -->    
+    <dict>
+      <key>match</key>
+      <string>\:([^\s\(\)]+|\([^\s\)]+\))?</string>
+      <key>name</key>
+      <string>constant.language.boolean.true.hn</string>
+    </dict>
+
+    <!-- boolean false -->    
+    <dict>
+      <key>match</key>
+      <string>\bfalse\b</string>
+      <key>name</key>
+      <string>constant.language.boolean.false.hn</string>
+    </dict>
+
+    <!-- null -->    
+    <dict>
+      <key>match</key>
+      <string>\bnull\b</string>
+      <key>name</key>
+      <string>constant.language.null.hn</string>
+    </dict>
+
+    <!-- blue unitalicized text (monokai), possibly saving this for something -->    
+    <dict>
+      <key>match</key>
+      <string>\b(blue_unitalicized_text)\b</string>
+      <key>name</key>
+      <string>support.constant.dom.hn</string>
+    </dict>
+
+    <!-- operators and special chars -->    
+    <dict>
+      <key>match</key>
+      <string>\%|\~|\+|\-|\*|\/|\=|\>|&lt;|\!|\:\=|\:\:|&amp;</string>
+      <key>name</key>
+      <string>keyword.operator.hn</string>
+    </dict>
+
+    <!-- reserved words -->    
+    <dict>
+      <key>match</key>
+      <string>\b(let|initializer|recur|method|if|new|require|export|set|setKey|unsetKey)\b</string>
+      <key>name</key>
+      <string>keyword.operator.hn</string>
+    </dict>
+
+  </array>
+  <key>scopeName</key>
+  <string>source.hn</string>
+  <key>uuid</key>
+  <string>84aa8f90-35fb-11e2-81c1-0800200c9a66</string>
+</dict>
+</plist>
