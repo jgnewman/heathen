@@ -2,9 +2,9 @@
 
 
 var fs       = require('fs'),
-    uglify   = require('uglify-js2'),
-    argParse = require('../lib/argparser').parse,
-    version  = require('../lib/compiletechniques').version,
+    argParse = require('../src/argparser').parse,
+    version  = require('../src/compiletechniques').version,
+    api      = require('../heathen'),
     bashArgs = process.argv.slice(2),
     usage    = [
         ""
@@ -14,12 +14,12 @@ var fs       = require('fs'),
       , ""
       , "  Options:"
       , ""
-      , "    -v, --version   Display the version of heathen."
-      , "    -h, --help      Display help information."
-      , "    -o, --output    The path to the file where you want to place compiled code."
+      , "    -v, --version          Display the version of heathen."
+      , "    -h, --help             Display help information."
+      , "    -o, --output [file]    The path to the file where you want to place compiled code."
+      , "    -m, --minify"
       , ""
     ].join("\n"),
-    options = {},
     args;
 
 /*
@@ -27,14 +27,19 @@ var fs       = require('fs'),
  * of the right arguments.
  */
 function processOptions(argObj) {
+  var options = {};
+
   if (args._noflag) {
-    options.input = args._noflag;
+    options.input = args._noflag[0];
   }
   if (args['-o']) {
-    options.output = args['-0'];
+    options.output = args['-o'][0];
   }
-  console.log(options);
-  process.exit(0);
+  if (args['-m']) {
+    options.minify = true;
+  }
+
+  return api.compile(options);
 }
 
 /*
