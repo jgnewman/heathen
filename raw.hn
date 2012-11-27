@@ -1,2 +1,5 @@
 
-(&&= (call 1) (call 2))
+(class Person
+  initializer (fn |name| (setKey this 'name' name))
+  sayName     (fn || (console.log this.name)))
+

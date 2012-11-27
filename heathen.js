@@ -28,11 +28,16 @@ module.exports = {
 
       if (!options.output) {
         console.log(code);
+        if (options.callback && typeof options.callback === 'function') {
+          return options.callback();
+        }
       } else {
-        fs.writeFileSync(options.output, code);
+        fs.writeFile(options.output, code, function (err) {
+          if (options.callback && typeof options.callback === 'function') {
+            return options.callback(err);
+          }
+        });
       }
-
-      process.exit(0);
     }
 
     if (options.minify !== true) {

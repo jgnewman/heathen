@@ -6,6 +6,7 @@
 var libs         = require('./library'),
     version      = '0.0.1',
     library      = [],
+    atoms        = {},
     identifier   = new RegExp(/^[a-zA-Z\_\$]/),
     stringMarker = new RegExp(/\`string\_\d+\`/);
 
@@ -199,7 +200,13 @@ function operator() {
  * How to parse a basic value.
  */
 function value() {
-  return this.val;
+  if (first(this.val) === '@') {
+    atoms[rest(this.val)] = true;
+    library.push('registerModuleAtoms');
+    return 'HN.atoms["' + rest(this.val) + '"]';
+  } else {
+    return this.val;
+  }
 }
 
 /*
@@ -868,7 +875,7 @@ function reassignment() {
 /*
  * How to compile a user's class
  * function InitializerName () { ... }
- * HN.classes.new(InitializerName, { ... })
+ * HN.classes.create(InitializerName, { ... })
  */
 function userClass() {
   var newBody = [],
@@ -904,7 +911,7 @@ function userClass() {
   this.hash.body = newBody;
 
   begin += ('function ' + name + initializer.compile().replace(func, '') + '\n');
-  begin += ('HN.classes.' + (extend ? 'extend' : 'new') + '(');
+  begin += ('HN.classes.' + (extend ? 'extend' : 'create') + '(');
   begin += (name + ', ' + (extend ? extend + ', ' : '') + this.hash.compile() + ')');
 
   library.push('classes');
@@ -993,12 +1000,34 @@ function populateStrReg(code, strings, regexes) {
  * How to create
  */
 function writeLibs() {
-  var begin = '  HN = _HN_global.HN || {};\n';
+  var i, atomList = [], begin = '  /*\n   * Library code...\n   */\n';
+  begin += '  HN = _HN_global.HN || {};\n';
+  begin += '  HN.atoms = HN.atoms || {};\n\n';
   loop(library, function (each) {
     var stringified = libs[each].toString();
-    begin += ('  HN.' + each + ' = HN.' + each + ' || ' + stringified + ';\n');
+    begin += ('  HN.' + each + ' = HN.' + each + ' || (' + stringified + '());\n');
   });
-  return begin + '\n';
+  begin += '\n';
+
+  /*
+   * Get an ordered list of unique atoms.
+   */
+  for (i in atoms) {
+    if (Object.prototype.hasOwnProperty.call(atoms, i)) {
+      atomList.push(i);
+    }
+  }
+  if (atomList.length) {
+    begin += 'HN.registerModuleAtoms(';
+    loop(atomList, function (each, index) {
+      if (index !== 0) {
+        begin += ', ';
+      }
+      begin += ('"' + each + '"');
+    });
+    begin += ');\n';
+  }
+  return begin + '\n  /*\n   * Begin user-defined code...\n   */\n';
 }
 
 /*
@@ -1033,9 +1062,9 @@ function program() {
    * Replace strings' and regexes' placeholders and spit the sucker
    * out.
    */
-  varStr = populateStrReg(writeVars('', this.vars)) + '\n';
+  varStr = populateStrReg(writeVars('', this.vars), this.strings, this.regexes) + '\n';
   libStr = writeLibs(library);
-  begin  = populateStrReg(begin.replace(/\;(\s*\;)*/g, ';'));
+  begin  = populateStrReg(begin.replace(/\;(\s*\;)*/g, ';'), this.strings, this.regexes);
 
   /*
    * Add library code to the module;
