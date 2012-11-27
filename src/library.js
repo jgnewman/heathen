@@ -4,6 +4,12 @@
  */
 
 /*
+ * We don't import this entire thing into every compiled module.  Instead,
+ * we wait to see if the user wants any of it and then we only drop in the
+ * functionality the user wants.
+ */
+
+/*
  * Because these methods get stringified upon compilation, and some could
  * possibly be immediate closures that return objects, each exportable library
  * method should be wrapped in a function that returns its value.  Then
@@ -48,6 +54,148 @@ module.exports = {
        */
        return data[data.length - 1];
     };
+  },
+
+  "map" : function () {
+    function map(config, fn) {
+      /*
+       * Calls fn once per each iteration as specified by config
+       * where config is a collection, a range, or a function returning
+       * a truthy/falsy value.
+       *
+       * Builds a new array.
+       */
+      var accum = [], len, val, i;
+
+      /*
+       * If config is a function:
+       */
+      if (typeof config === 'function') {
+        len = config();
+        while (len) {
+          val = fn.call(config, len);
+          if (val === map.die) {
+            break;
+          }
+          if (val !== map.exclude) {
+            accum.push(val);
+          }
+          len = config();
+        }
+        return accum;
+
+      /*
+       * If config is an array:
+       */
+      } else if (Object.prototype.toString.call(config) === '[object Array]') {
+        len = config.length;
+        for (i = 0; i < len; i += 1) {
+          val = fn.call(config, config[i], i);
+          if (val === map.die) {
+            break;
+          }
+          if (val !== map.exclude) {
+            accum.push(val);
+          }
+        }
+        return accum;
+      
+      /*
+       * If config is any other kind of object:
+       */
+      } else if (typeof config === 'object') {
+        for (i in config) {
+          if (Object.prototype.hasOwnProperty.call(config, i)) {
+            val = fn.call(config, config[i], i);
+            if (val === map.die) {
+              break;
+            }
+            if (val !== map.exclude) {
+              accum.push(val);
+            }
+          }
+        }
+        return accum;
+      
+      } else {
+        throw new Error('You can not use map to iterate over an object like ' + config + '.');
+      }
+
+    }
+    map.exclude = {};
+    map.die = {};
+    return map;
+  },
+
+  "chart" : function () {
+    function chart(config, fn) {
+      /*
+       * Calls fn once per each iteration as specified by config
+       * where config is a collection, a range, or a function returning
+       * a truthy/falsy value.
+       *
+       * Builds a new array.
+       */
+      var accum = {}, len, val, i;
+
+      /*
+       * If config is a function:
+       */
+      if (typeof config === 'function') {
+        len = config();
+        while (len) {
+          val = fn.call(config, len);
+          if (val === chart.die) {
+            break;
+          }
+          if (val !== chart.exclude) {
+            accum[val.key] = val.val;
+          }
+          len = config();
+        }
+        return accum;
+
+      /*
+       * If config is an array:
+       */
+      } else if (Object.prototype.toString.call(config) === '[object Array]') {
+        len = config.length;
+        for (i = 0; i < len; i += 1) {
+          val = fn.call(config, config[i], i);
+          if (val === chart.die) {
+            break;
+          }
+          if (val !== chart.exclude) {
+            accum[val.key] = val.val;
+          }
+        }
+        return accum;
+      
+      /*
+       * If config is any other kind of object:
+       */
+      } else if (typeof config === 'object') {
+        for (i in config) {
+          if (Object.prototype.hasOwnProperty.call(config, i)) {
+            val = fn.call(config, config[i], i);
+            if (val === chart.die) {
+              break;
+            }
+            if (val !== chart.exclude) {
+              accum[val.key] = val.val;
+            }
+          }
+        }
+        return accum;
+      
+      } else {
+        throw new Error('You can not use chart to iterate over an object like ' + config + '.');
+      }
+
+    }
+    chart.exclude = {};
+    chart.die = {};
+    return chart;
   },
 
   "buildRange" : function () {
@@ -459,6 +607,131 @@ module.exports = {
         }
       };
     }());
+  },
+
+  "getType" : function () {
+    return function (data) {
+      /*
+       * JavaScript's typeof operator is terrible.  Everything
+       * returns 'object'.  This function replaces it and allows you
+       * to confidently ask for data types.
+       */
+      var ezType = typeof data, typeStr, origLen;
+
+      /*
+       * Start with the easy typeof tests
+       */
+      if (ezType === 'undefined' || ezType === 'boolean' || ezType === 'string' || ezType === 'function' || ezType === 'xml') {
+        return ezType;
+      }
+
+      /*
+       * NaN tests positive for a number even though NaN stands for 'Not A Number'.
+       * We fix that here and return if the argument 'nan' if it's actually the value NaN
+       */
+      if (ezType === 'number') {
+        return (typeof data === 'number' && !(data > 0) && !(data < 0) && !(data === 0)) ? 'nan' : ezType;
+      }
+
+      /*
+       * The only other typeof value is 'object'
+       * It could be an array, a nodelist, json, null, regexp, date, arguments,
+       * an html element, or some other kind of weird ordered list
+       */
+
+      /*
+       * Return if it's null
+       */
+      if (data === null) {
+        return 'null';
+      }
+
+      /*
+       * Do the .toString trick and slice the result down to the relevant word
+       */
+      typeStr = Object.prototype.toString.call(data).slice(8);
+      typeStr = typeStr.slice(0, typeStr.length - 1).toLowerCase();
+
+      /*
+       * If it's not 'object'...
+       */
+      if (typeStr !== 'object') {
+        
+        /*
+         * If it's any kind of html element, we'll file that under 'element'.
+         */
+        if (elementPattern.test(typeStr)) {
+          return 'element';
+        }
+        
+        /*
+         * If it's some kind of weird native list like DOMTokenList
+         * without the Array prototype, just go ahead and call it a list.
+         */
+        if (listPattern.test(typeStr)) {
+          return 'list';
+        }
+        
+        /*
+         * Otherwise, return what it is.
+         */
+        return typeStr;
+      }
+
+      /*
+       * We only get here if the .toString trick returned 'object'.
+       * If there is a .length property, store it
+       */
+      origLen = data.length;
+
+      /*
+       * If that property is a number...
+       */
+      if (typeof data.length === 'number') {
+
+        /*
+         * There might be a false positive if we have JSON with an 'own property' called length.
+         */
+        if (Object.prototype.hasOwnProperty.call(data, 'length')) {
+
+          /*
+           * So we delete it.  That's why we stored it earlier.
+           * If the property is a native length counter or exists in a prototype, this won't remove it
+           */
+          delete data.length;
+        }
+
+        /*
+         * So if after deleting we still have a length, property, it's an ordered list
+         */
+        if (typeof data.length === 'number') {
+
+          /*
+           * If this is an instance of jQuery, it's a jQuery object
+           */
+          if (_HN_global.jQuery && data instanceof _HN_global.jQuery) {
+            return '$object';
+          }
+
+          /*
+           * Otherwise, it's some kind of customized ordered object.  We'll call that a list.
+           */
+          return 'list';
+        }
+      }
+
+      /*
+       * If we stored a real value from the .length property earlier, put it back
+       */
+      if (origLen !== undefined) {
+        data.length = origLen;
+      }
+
+      /*
+       * The only thing left at this point is JSON
+       */
+      return 'object';
+    };
   }
 
 }

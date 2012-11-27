@@ -368,10 +368,10 @@
       <string>keyword.operator.hn</string>
     </dict>
 
-    <!-- reserved words -->    
+    <!-- special functions -->    
     <dict>
       <key>match</key>
-      <string>\b(let|initializer|recur|method|if|new|require|export|set|setKey|unsetKey)\b</string>
+      <string>\b(all|any|chart|export|first|if|initializer|last|lead|let|map|method|new|recur|require|rest|set|setKey|typeof|unsetKey)\b</string>
       <key>name</key>
       <string>keyword.operator.hn</string>
     </dict>

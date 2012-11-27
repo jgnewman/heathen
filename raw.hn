@@ -1,6 +1,3 @@
 
-(fn factorial (match
-  (method [0] 1)
-  (method [1] 1)
-  (method [n] (* n (factorial (- n 1))))))
+(typeof string)
 

@@ -286,11 +286,44 @@ function newFn(args, pos) {
 }
 
 /*
+ * Compiles the special form 'all' and '!' functions.
+ */
+function compareFn(args, wantsTruthy) {
+  var begin = '(';
+  loop(args, function (each, index) {
+    if (index !== 0) {
+      begin += '&& ';
+    }
+    begin += (wantsTruthy ? each.compile() : '!' + each.compile());
+  });
+  begin += ')';
+  return begin;
+}
+
+/*
+ * Compiles the special form 'any' function.
+ */
+function anyFn(args) {
+  var begin = '(';
+  loop(args, function (each, index) {
+    if (index !== 0) {
+      begin += '|| ';
+    }
+    begin += each.compile();
+  });
+  begin += ')';
+  return begin;
+}
+
+/*
  * Creates a basic function call.
  */
 function functionCall() {
   var begin, typeIsFunc, compiled;
 
+  /*
+   * Hand off to special form function calls...
+   */
   switch (this.fn[0].val) {
 
     case 'param':
@@ -301,6 +334,15 @@ function functionCall() {
 
     case 'new':
       return newFn(this.args, this.pos);
+
+    case 'all':
+      return compareFn(this.args, true);
+
+    case '!':
+      return compareFn(this.args, false);
+
+    case 'any':
+      return anyFn(this.args);
 
     default:
       typeIsFunc = (this.fn[0].type === 'FunctionDefinition' || this.fn[0].type === 'PatternMatchDefinition');
@@ -329,6 +371,21 @@ function functionCall() {
         case 'last':
           library.push('last');
           compiled = 'HN.last';
+          break;
+
+        case 'map':
+          library.push('map');
+          compiled = 'HN.map';
+          break;
+
+        case 'chart':
+          library.push('chart');
+          compiled = 'HN.chart';
+          break;
+
+        case 'typeof':
+          library.push('getType');
+          compiled = 'HN.getType';
           break;
 
         default:

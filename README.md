@@ -524,16 +524,3 @@ chain.  The `>>=` function takes the following arguments:
 3. All subsequent arguments should be the functions included in the chain.
 
 
-TO-DO
-=====
-
-- any, all, not functions
-- map function
-- type checking lib
-
-x retrieval syntax for arrays (at function)
-x add ranges
-x disallow setKey on HN.atoms
-x first, rest, lead, last functions
-x new function
-
