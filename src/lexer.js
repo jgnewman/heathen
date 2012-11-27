@@ -183,6 +183,12 @@ function lex(code) {
           return '`lazy` ';
 
         /*
+         * Ignore commas
+         */
+        case ',':
+          return ' ';
+
+        /*
          * Return the character in the default case
          */
         default:

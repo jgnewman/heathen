@@ -1,5 +1,3 @@
 
-(class Person
-  initializer (fn |name| (setKey this 'name' name))
-  sayName     (fn || (console.log this.name)))
+(>>= bind :4 fn_1 fn_2 fn_3)
 
