@@ -119,6 +119,14 @@
       <string>meta.function.hn</string>
     </dict>
 
+    <!-- params as a function -->
+    <dict>
+      <key>match</key>
+      <string>\bparam\b</string>
+      <key>name</key>
+      <string>variable.parameter.function.hn</string>
+    </dict>
+
     <!-- single line regex -->
     <dict>
       <key>captures</key>

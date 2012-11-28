@@ -1,21 +1,12 @@
 
+(let x 0)
 
-(fn ret |val| :val)
+(let result
+  (chart 
+    [1 2 3 4 5]
+    (fn |val key|
+      (console.log val key)
+      [(+ 'key' val) (* val 10)])))
 
-(fn bind |mval fun| (fun (mval)))
-
-(fn fn1 |x|
-  (console.log x)
-  (ret (+ x 1)))
-
-(fn fn2 |x|
-  (console.log x)
-  (ret (+ x 2)))
-
-(fn fn3 |x|
-  (console.log x)
-  (ret (+ x 3)))
-
-(>>= bind (ret 0) fn1 fn2 fn3)
-
+(console.log result)
 

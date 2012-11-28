@@ -34,7 +34,8 @@ module.exports = {
       /*
        * Return all but the first item in data
        */
-       return Array.prototype.slice.call(data, 1);
+       var out = Array.prototype.slice.call(data, 1);
+       return typeof data === 'string' ? out.join('') : out;
     };
   },
 
@@ -43,7 +44,8 @@ module.exports = {
       /*
        * Return all but the last item in data
        */
-       return Array.prototype.slice.call(data, 0, data.length - 1);
+       var out = Array.prototype.slice.call(data, 0, data.length - 1);
+       return typeof data === 'string' ? out.join('') : out;
     };
   },
 
@@ -234,8 +236,9 @@ module.exports = {
        */
 
       var len = arguments.length, i;
+      function Atom() {}
       for (i = 0; i < len; i += 1) {
-        HN.atoms[arguments[i]] = HN.atoms[arguments[i]] || {};
+        HN.atoms[arguments[i]] = HN.atoms[arguments[i]] || new Atom();
       }
     };
   },
@@ -500,38 +503,6 @@ module.exports = {
       }
 
       /*
-       * Where:
-       * constr - a constructor function
-       * arr    - an array to be populated with constructors of
-       *          an object's inheritance lineage
-       *
-       * Recursively populates an array with constructor functions
-       * in an object's inheritance lineage.
-       */
-      function calculateLineage(constr, arr) {
-        /*
-         * Stuff the constructor into the front of the array.
-         */
-        arr.unshift(constr);
-
-        /*
-         * If the constructor is a classerize class, recurse
-         * using the constructor's parent as found in the
-         * classes object and the array.
-         */
-        if (classes[constr.name]) {
-          return calculateLineage(classes[constr.name].parent, arr);
-        }
-
-        /*
-         * If the constructor is not a classerize class, as
-         * in the case of Object, we have reached the beginning
-         * of the inheritance chain and can return the array.
-         */
-        return arr;
-      }
-
-      /*
        * All user-created classes should be extensions of the Class
        * constructor. This will ensure that they all share some common
        * prototypal properties such as the ability to retrieve the
@@ -618,7 +589,11 @@ module.exports = {
        * returns 'object'.  This function replaces it and allows you
        * to confidently ask for data types.
        */
-      var ezType = typeof data, typeStr, origLen;
+      var listPattern = new RegExp(/list/i),
+          elementPattern = new RegExp(/^html[^\s]+element$/i),
+          ezType = typeof data, 
+          typeStr,
+          origLen;
 
       /*
        * Start with the easy typeof tests

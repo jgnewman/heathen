@@ -676,7 +676,7 @@ function list() {
     }
     front = compiled.match(/^\`string\_\d+\`/)[0];
     back  = compiled.match(/\`string\_\d+\`$/)[0];
-    begin = 'HN.buildRange(' + front + ', ' + back + ', false, ' + inclusive + ')';
+    begin = 'HN.buildRange(' + front + ', ' + back + ', false, ' + (inclusive || 'false') + ')';
     return begin;
 
   /*
@@ -690,7 +690,7 @@ function list() {
     }
     front = compiled.match(/^\d+/)[0];
     back  = compiled.match(/\d+$/)[0];
-    begin = 'HN.buildRange(' + front + ', ' + back + ', true, ' + inclusive + ')';
+    begin = 'HN.buildRange(' + front + ', ' + back + ', true, ' + (inclusive || 'false') + ')';
     return begin;
   }
 
@@ -1183,12 +1183,25 @@ function populateStrReg(code, strings, regexes) {
  * How to create
  */
 function writeLibs() {
-  var i, atomList = [], begin = '  /*\n   * Library code...\n   */\n';
+  var begin    = '  /*\n   * Library code...\n   */\n', 
+      atomList = [],
+      alreadyWritten = {},
+      i;
+
   begin += '  HN = _HN_global.HN || {};\n';
   begin += '  HN.atoms = HN.atoms || {};\n\n';
+
   loop(library, function (each) {
-    var stringified = libs[each].toString();
-    begin += ('  HN.' + each + ' = HN.' + each + ' || (' + stringified + '());\n');
+    var stringified;
+
+    /*
+     * If we've already written this code to the module, don't do it again.
+     */
+    if (!Object.prototype.hasOwnProperty.call(alreadyWritten, each)) {
+      stringified = libs[each].toString();
+      begin += ('  HN.' + each + ' = HN.' + each + ' || (' + stringified + '());\n');
+      alreadyWritten[each] = true;
+    }
   });
   begin += '\n';
 

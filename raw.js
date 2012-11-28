@@ -5,7 +5,7 @@
 
 (function(_HN_global) {
 
-    var HN, ret, bind, fn1, fn2, fn3;
+    var HN, x, result;
 
     /*
      * Library code...
@@ -13,52 +13,76 @@
     HN = _HN_global.HN || {};
     HN.atoms = HN.atoms || {};
 
-    HN.monadChain = HN.monadChain || (function() {
-        return function(bind) {
-            return {
+    HN.chart = HN.chart || (function() {
+        function chart(config, fn) {
+            /*
+             * Calls fn once per each iteration as specified by config
+             * where config is a collection, a range, or a function returning
+             * a truthy/falsy value.
+             *
+             * Builds a new array.
+             */
+            var accum = {},
+                len, val, i;
+
+            /*
+             * If config is a function:
+             */
+            if (typeof config === 'function') {
+                len = config();
+                while (len) {
+                    val = fn.call(config, len);
+                    if (val === chart.die) {
+                        break;
+                    }
+                    if (val !== chart.exclude) {
+                        accum[val[0]] = val[1];
+                    }
+                    len = config();
+                }
+                return accum;
 
                 /*
-                 * Define the 'pass' function.
-                 * Where:
-                 * mval - the value to be passed along the monadic chain
-                 *      - should already be wrapped by return
-                 *
-                 * Returns an object with the method 'to' wherein you
-                 * can specify the functions that will become
-                 * members of the invocation chain.  Invoking 'to' will
-                 * initialize the monadic invocation chain.
+                 * If config is an array:
                  */
-                "pass": function(mval) {
-                    return {
-                        /*
-                         * Where:
-                         * arguments - functions that will be part of the monad call
-                         */
-                        "to": function() {
-                            /*
-                             * Grab the functions and wrap our initial value from
-                             * .pass in the return function.
-                             */
-                            var functions = arguments,
-                                output = mval,
-                                len = functions.length,
-                                i;
-                            /*
-                             * Loop over each argument function.  For each one,
-                             * bind it to output then wrap that with return.
-                             */
-                            for (i = 0; i < len; i += 1) {
-                                output = bind(output, functions[i]);
-                            }
-                            /*
-                             * Finally, return the output.
-                             */
-                            return output;
-                        }
-                    };
+            } else if (Object.prototype.toString.call(config) === '[object Array]') {
+                len = config.length;
+                for (i = 0; i < len; i += 1) {
+                    val = fn.call(config, config[i], i);
+                    if (val === chart.die) {
+                        break;
+                    }
+                    if (val !== chart.exclude) {
+                        accum[val[0]] = val[1];
+                    }
                 }
-            };
-        };
+                return accum;
+
+                /*
+                 * If config is any other kind of object:
+                 */
+            } else if (typeof config === 'object') {
+                for (i in config) {
+                    if (Object.prototype.hasOwnProperty.call(config, i)) {
+                        val = fn.call(config, config[i], i);
+                        if (val === chart.die) {
+                            break;
+                        }
+                        if (val !== chart.exclude) {
+                            accum[val[0]] = val[1];
+                        }
+                    }
+                }
+                return accum;
+
+            } else {
+                throw new Error('You can not use chart to iterate over an object like ' + config + '.');
+            }
+
+        }
+        chart.exclude = {};
+        chart.die = {};
+        return chart;
     }());
 
 
@@ -66,103 +90,14 @@
      * Begin user-defined code...
      */
 
-    // Define a closure to house the ret function...
-    ret = (function() {
+    x = 0;
 
-        // Create the ret function that will be callable to the user...
-        var _output = function ret(val) {
-                return function() {
-                    return val;
-                }
-            };
+    result = HN.chart([1, 2, 3, 4, 5], function(val, key) {
+        console.log(val, key);
+        return [('key' + val), (val * 10)];
+    });
 
-        // Create and store references to each parameter's name and position in the list...
-        _output._paramPositions = {
-            "val": 0
-        };
-
-        // Return the callable function...
-        return _output;
-
-    }());
-
-    // Define a closure to house the bind function...
-    bind = (function() {
-
-        // Create the bind function that will be callable to the user...
-        var _output = function bind(mval, fun) {
-                return fun(mval());
-            };
-
-        // Create and store references to each parameter's name and position in the list...
-        _output._paramPositions = {
-            "mval": 0,
-            "fun": 1
-        };
-
-        // Return the callable function...
-        return _output;
-
-    }());
-
-    // Define a closure to house the fn1 function...
-    fn1 = (function() {
-
-        // Create the fn1 function that will be callable to the user...
-        var _output = function fn1(x) {
-                console.log(x);
-                return ret((x + 1));
-            };
-
-        // Create and store references to each parameter's name and position in the list...
-        _output._paramPositions = {
-            "x": 0
-        };
-
-        // Return the callable function...
-        return _output;
-
-    }());
-
-    // Define a closure to house the fn2 function...
-    fn2 = (function() {
-
-        // Create the fn2 function that will be callable to the user...
-        var _output = function fn2(x) {
-                console.log(x);
-                return ret((x + 2));
-            };
-
-        // Create and store references to each parameter's name and position in the list...
-        _output._paramPositions = {
-            "x": 0
-        };
-
-        // Return the callable function...
-        return _output;
-
-    }());
-
-    // Define a closure to house the fn3 function...
-    fn3 = (function() {
-
-        // Create the fn3 function that will be callable to the user...
-        var _output = function fn3(x) {
-                console.log(x);
-                return ret((x + 3));
-            };
-
-        // Create and store references to each parameter's name and position in the list...
-        _output._paramPositions = {
-            "x": 0
-        };
-
-        // Return the callable function...
-        return _output;
-
-    }());
-
-    HN.monadChain(bind).pass(ret(0)).to(fn1, fn2, fn3);
+    console.log(result);
 
 
 }(this));
