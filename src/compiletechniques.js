@@ -192,6 +192,27 @@ function operator() {
     case '&&=':
       return methodChain.call(this);
 
+    case 'AND':
+      return twoArgMath.call(this, '&');
+
+    case 'OR':
+      return twoArgMath.call(this, '|');
+
+    case 'NOT':
+      return oneArgMath.call(this, '~');
+
+    case 'XOR':
+      return twoArgMath.call(this, '^');
+
+    case 'BSL':
+      return twoArgMath.call(this, '<<');
+
+    case 'BSR':
+      return twoArgMath.call(this, '>>');
+
+    case 'BSR0':
+      return twoArgMath.call(this, '>>>');
+
     default:
       throw new Error('Compiler bug related to ' + this.fn + ' on ' + this.pos + '. No compile method available for this operator.');
   }

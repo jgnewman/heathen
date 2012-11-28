@@ -379,7 +379,7 @@
     <!-- special functions -->    
     <dict>
       <key>match</key>
-      <string>\b(all|any|chart|do|export|first|if|initializer|last|lead|let|map|method|new|recur|require|rest|set|setKey|typeof|unsetKey)\b</string>
+      <string>\b(AND|all|any|BSL|BSR|BSR0|chart|do|export|first|if|initializer|last|lead|let|map|method|new|OR|recur|require|rest|set|setKey|typeof|unsetKey|XOR)\b</string>
       <key>name</key>
       <string>keyword.operator.hn</string>
     </dict>

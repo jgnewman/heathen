@@ -210,6 +210,34 @@ function buildTree(arr, lineNo, parentScope) {
             tree.push(new Operator(first(item), rest(item), curLine, parentScope));
             break;
 
+          case 'AND':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'OR':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'NOT':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'XOR':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'BSL':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'BSR':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
+          case 'BSR0':
+            tree.push(new Operator(first(item), rest(item), curLine, parentScope));
+            break;
+
           case 'fn':
             tree.push(new FunctionDefinition(rest(item), curLine, parentScope));
             break;
