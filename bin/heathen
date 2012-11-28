@@ -23,8 +23,8 @@ var fs       = require('fs'),
     args;
 
 /*
- * Define an example procedure that can be called in case
- * of the right arguments.
+ * Create a cleaner object with the user's options
+ * and RUN DAT COMPILER!!
  */
 function processOptions(argObj) {
   var options = {};
