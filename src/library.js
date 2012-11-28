@@ -149,7 +149,7 @@ module.exports = {
             break;
           }
           if (val !== chart.exclude) {
-            accum[val.key] = val.val;
+            accum[val[0]] = val[1];
           }
           len = config();
         }
@@ -166,7 +166,7 @@ module.exports = {
             break;
           }
           if (val !== chart.exclude) {
-            accum[val.key] = val.val;
+            accum[val[0]] = val[1];
           }
         }
         return accum;
@@ -182,7 +182,7 @@ module.exports = {
               break;
             }
             if (val !== chart.exclude) {
-              accum[val.key] = val.val;
+              accum[val[0]] = val[1];
             }
           }
         }
