@@ -7,6 +7,7 @@ var libs         = require('./library'),
     version      = '0.0.1',
     library      = [],
     atoms        = {},
+    classInits   = {},
     identifier   = new RegExp(/^[a-zA-Z\_\$]/),
     stringMarker = new RegExp(/\`string\_\d+\`/);
 
@@ -1092,6 +1093,20 @@ function userClass() {
     }
   }
   this.hash.body = newBody;
+
+  /*
+   * Allow child classes to inherit parent initializers if
+   * unspecified.
+   */
+  if (initializer) {
+    classInits[name] = initializer;
+  } else {
+    if (extend) {
+      initializer = classInits[extend];
+    } else {
+      throw new Error('Class has no initializer and no inherited initializer is specified. Line ' + this.pos + '.');
+    }
+  }
 
   begin += ('function ' + name + initializer.compile().replace(func, '') + '\n');
   begin += ('HN.classes.' + (extend ? 'extend' : 'create') + '(');

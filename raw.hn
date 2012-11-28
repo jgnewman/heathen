@@ -1,11 +1,13 @@
 
-(let x 0)
+(class Person
+  initializer (fn |name| (setKey this 'name' name))
+  getName :this.name)
 
-(let result
-     (chart
-        (fn || (++ x) (< x 10))
-        (fn |item|
-          (console.log item)
-          ['key' (* 10 item)])))
+(class Kid => Person
+  getName (fn ||
+    (console.log 'here')
+    (this._super 'getName')))
 
-(console.log result)
+(let bobby (new Kid 'bobby'))
+
+(console.log (bobby.getName))
