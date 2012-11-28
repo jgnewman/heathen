@@ -1,3 +1,7 @@
 
-(typeof string)
+($ :(do
+
+  (&&= ($ '#box') (fadeOut 'fast'))
+
+))
 

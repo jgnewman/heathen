@@ -505,34 +505,42 @@ function flag() {
 /*
  * The procedure for writing a 'var' statement.
  */
-function writeVars(toStr, vars) {
+function writeVars(toStr, vars, atProgramLevel) {
   var build, newVars = [], used = {}, i;
   if (vars.length) {
     build = toStr + '  var ';
 
     /*
      * Create a new var list with no duplicates.
+     * If we're not at the program level, don't overwrite
+     * the HN library var.
      */
     loop(vars, function (each) {
       used[each] = true;
     });
     for (i in used) {
       if (Object.prototype.hasOwnProperty.call(used, i)) {
-        newVars.push(i);
+        if (atProgramLevel || i !== 'HN') {
+          newVars.push(i);
+        }
       }
     }
 
-    /*
-     * Loop over the new list and write vars.
-     */
-    loop(newVars, function (each, index) {
-      if (index % 2 !== 0) {
-        build += ', '
-      }
-      build += each; 
-    });
-    build += ';\n';
-    return build;
+    if (newVars.length) {
+      /*
+       * Loop over the new list and write vars.
+       */
+      loop(newVars, function (each, index) {
+        if (index % 2 !== 0) {
+          build += ', '
+        }
+        build += each; 
+      });
+      build += ';\n';
+      return build;
+    } else {
+      return toStr;
+    }
   } else {
     return toStr;
   }
@@ -1237,7 +1245,7 @@ function program() {
    * Replace strings' and regexes' placeholders and spit the sucker
    * out.
    */
-  varStr = populateStrReg(writeVars('', this.vars), this.strings, this.regexes) + '\n';
+  varStr = populateStrReg(writeVars('', this.vars, true), this.strings, this.regexes) + '\n';
   libStr = writeLibs(library);
   begin  = populateStrReg(begin.replace(/\;(\s*\;)*/g, ';'), this.strings, this.regexes);
 
