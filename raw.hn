@@ -2,11 +2,10 @@
 (let x 0)
 
 (let result
-  (chart 
-    [1 2 3 4 5]
-    (fn |val key|
-      (console.log val key)
-      [(+ 'key' val) (* val 10)])))
+     (chart
+        (fn || (++ x) (< x 10))
+        (fn |item|
+          (console.log item)
+          ['key' (* 10 item)])))
 
 (console.log result)
-
