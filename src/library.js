@@ -291,7 +291,9 @@ module.exports = {
   "methodChain" : function () {
     return function () {
       /*
-       * (&&= ($ 'selector') (fadeOut 'fast') (fadeIn 'slow'))
+       * Example:
+       * (&&= ($ 'selector') (fadeOut 'fast'))
+       *
        * Since this is a special form, each argument needs to come in
        * wrapped in a function that returns the call.
        *

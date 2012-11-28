@@ -1,7 +1,21 @@
 
-($ :(do
 
-  (&&= ($ '#box') (fadeOut 'fast'))
+(fn ret |val| :val)
 
-))
+(fn bind |mval fun| (fun (mval)))
+
+(fn fn1 |x|
+  (console.log x)
+  (ret (+ x 1)))
+
+(fn fn2 |x|
+  (console.log x)
+  (ret (+ x 2)))
+
+(fn fn3 |x|
+  (console.log x)
+  (ret (+ x 3)))
+
+(>>= bind (ret 0) fn1 fn2 fn3)
+
 

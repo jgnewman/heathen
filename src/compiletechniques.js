@@ -531,7 +531,7 @@ function writeVars(toStr, vars, atProgramLevel) {
        * Loop over the new list and write vars.
        */
       loop(newVars, function (each, index) {
-        if (index % 2 !== 0) {
+        if (index !== 0) {
           build += ', '
         }
         build += each; 
@@ -1210,7 +1210,7 @@ function writeLibs() {
     });
     begin += ');\n';
   }
-  return begin + '\n  /*\n   * Begin user-defined code...\n   */\n';
+  return begin + '\n  /*\n   * Begin user-defined code...\n   */\n\n';
 }
 
 /*
