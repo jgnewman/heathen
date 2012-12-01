@@ -12,7 +12,7 @@
 ----------------------- A Multi-Paradigm Lisp Dialect for JavaScript ------------------------
 
 ```
-> Note: Docs currently under development.
+> Note: Docs currently under development. Npm package not yet published.
 
 ### Why create another language targeting JavaScript?
 
@@ -49,6 +49,12 @@ Heathen does not attempt to implement the functional paradigm over JavaScript so
 keep things like variable reassignment.  As a result, the generated code is smaller and
 easier for someone looking at it to figure out and debug.  It's a different tool for
 different kinds of jobs.
+
+### Why'd you call it Heathen?
+
+Because I've done everything in my power to offend the syntactically religious.  OO diehards
+should hate it for the S expressions.  Old school Lispers should hate the fact that it's
+multi-paradigm.  However, if you enjoy being a heathen, you may enjoy this.
 
 ### How do I get started?
 
