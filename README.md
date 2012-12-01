@@ -12,6 +12,7 @@
 ----------------------- A Multi-Paradigm Lisp Dialect for JavaScript ------------------------
 
 ```
+> Note: Docs currently under development.
 
 ### Why create another language targeting JavaScript?
 
