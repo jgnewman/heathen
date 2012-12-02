@@ -16,6 +16,7 @@ var fs       = require('fs'),
       , ''
       , '    -v, --version          Display the version of heathen.'
       , '    -h, --help             Display help information.'
+      , '    -r, --repl             Starts up the Heathen REPL.'
       , '    -o, --output [file]    The path to the file where you want to place compiled code.'
       , '    -m, --minify           Set this if you want to minify the code.'
       , '    -x, --no-module        Set this if you do not want the output wrapped in a module.'
@@ -53,6 +54,7 @@ function processOptions(argObj) {
 args = argParse(bashArgs, [
   ['-v', '--version'],
   ['-h', '--help'],
+  ['-r', '--repl'],
   ['-o', '--output'],
   ['-m', '--minify'],
   ['-x', '--no-module']
@@ -68,6 +70,9 @@ if (args['-v']) {
 } else if (args['-h']) {
   console.log(usage);
   process.exit(0);
+
+} else if (args['-r']) {
+  api.repl();
 
 } else {
   processOptions(args);

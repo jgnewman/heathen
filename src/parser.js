@@ -580,6 +580,7 @@ module.exports = {
     parseTree    = lazify(buildTree(codeList, null, initialScope));
 
     return new Program(parseTree, initialScope, codeStrings, codeRegexes);
-  }
+  },
+  "version" : techs.version
 };
 

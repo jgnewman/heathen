@@ -14,5 +14,6 @@ module.exports = {
     var lexed     = lexer.lex(rawCode),
         parseTree = parser.parse(lexed);
     return parseTree.compile(modulize);
-  }
+  },
+  "version" : parser.version
 };

@@ -4,19 +4,23 @@
  */
 
 var fs       = require('fs'),
+    rc       = require('./src/repl'),
     compiler = require('./src/compiler'),
     minify   = require('minifyjs');
 
 
-/*
- * Options:
- * .code     - raw code
- * .input    - an input file
- * .output   - an output file
- * .minify   - boolean
- * .modulize - boolean (if false, code will not be wrapped in a module. otherwise, ignore this.)
- */
 module.exports = {
+
+  "version" : compiler.version,
+
+  /*
+   * Options:
+   * .code     - raw code
+   * .input    - an input file
+   * .output   - an output file
+   * .minify   - boolean
+   * .modulize - boolean (if false, code will not be wrapped in a module. otherwise, ignore this.)
+   */
   "compile" : function (options) {
     var rawCode      = options.code || (options.input ? fs.readFileSync(options.input).toString() : ''),
         compiledCode = compiler.compile(rawCode, options.modulize);
@@ -48,5 +52,27 @@ module.exports = {
     } else {
       minify.minify(compiledCode, {"engine" : "yui"}, finish);
     }
+  },
+
+  /*
+   * Options:
+   * .code     - raw code
+   * .input    - an input file
+   * .output   - an output file
+   * .minify   - boolean
+   * .modulize - boolean (if false, code will not be wrapped in a module. otherwise, ignore this.)
+   */
+  "repl" : function () {
+    var that = this;
+    rc.init({
+      "prompt"  : "user=> ",
+      "quit"    : /^\s*\(\s*quit\s*\)\s*$/,
+      "onbegin" : function () {
+        console.log('Heathen ' + that.version);
+      },
+      "preprocess" : function (userInput) {
+        return that.compile({"code" : userInput, "modulize" : false});
+      }
+    });
   }
 }
