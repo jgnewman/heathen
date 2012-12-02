@@ -137,6 +137,9 @@ If you don't specify the `minify` property, the code will be beautified instead.
 specify the `output` property, the output will go to the console.  If you don't specify
 the `input` property, you'll end up with an empty JavaScript module.
 
+There is also one more option not shown in the above example.  If you specify a `modulize` property
+and set it to `false`, your compiled output will not be wrapped in a module.
+
 Syntax
 ------
 
