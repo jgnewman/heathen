@@ -107,7 +107,9 @@ specify an output file, it will asynchronously write code to that file.  Heathen
 your code if you tell it to with the `-m` flag but, if not, it will come out nicely spaced and indented.
 
 By default, Heathen will wrap the compiled output in a module (in other words, an immediate closure.)
-However, if you do _not_ want this, set the `-x` flag.
+However, if you do _not_ want this, set the `-x` flag. In theory, you will almost never want to do this.
+One side effect is that code will not be minified or beautified so the only real use for this is probably when
+running code within a REPL.
 
 If you want to use Heathen with Node, you have a similar API.  First you'll have to require the
 module, of course:

@@ -28,10 +28,10 @@ module.exports = {
       }
 
       if (!options.output) {
-        console.log(code);
         if (options.callback && typeof options.callback === 'function') {
-          return options.callback();
+          return options.callback(code);
         }
+        return code;
       } else {
         fs.writeFile(options.output, code, function (err) {
           if (options.callback && typeof options.callback === 'function') {
@@ -41,7 +41,9 @@ module.exports = {
       }
     }
 
-    if (options.minify !== true) {
+    if (options.modulize === false) {
+      return compiledCode;
+    } else if (options.minify !== true) {
       minify.beautify(compiledCode, {}, finish);
     } else {
       minify.minify(compiledCode, {"engine" : "yui"}, finish);
