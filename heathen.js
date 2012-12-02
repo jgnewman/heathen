@@ -55,14 +55,9 @@ module.exports = {
   },
 
   /*
-   * Options:
-   * .code     - raw code
-   * .input    - an input file
-   * .output   - an output file
-   * .minify   - boolean
-   * .modulize - boolean (if false, code will not be wrapped in a module. otherwise, ignore this.)
+   * onquit - function; what to do when the repl quits.
    */
-  "repl" : function () {
+  "repl" : function (onquit) {
     var that = this;
     rc.init({
       "prompt"  : "user=> ",
@@ -72,7 +67,8 @@ module.exports = {
       },
       "preprocess" : function (userInput) {
         return that.compile({"code" : userInput, "modulize" : false});
-      }
+      },
+      "onquit" : onquit
     });
   }
 }

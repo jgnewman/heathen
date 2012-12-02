@@ -92,6 +92,7 @@ Options:
 
   -v, --version          Display the version of heathen.
   -h, --help             Display help information.
+  -r, --repl             Start up the Heathen repl.
   -o, --output [file]    The path to the file where you want to place compiled code.
   -m, --minify           Set this if you want to minify the code.
   -x, --no-module        Set this if you do not want the output wrapped in a module.
@@ -110,6 +111,9 @@ By default, Heathen will wrap the compiled output in a module (in other words, a
 However, if you do _not_ want this, set the `-x` flag. In theory, you will almost never want to do this.
 One side effect is that code will not be minified or beautified so the only real use for this is probably when
 running code within a REPL.
+
+Lastly, Heathen comes with a built-in REPL so you can try code examples out in the command line.
+To launch the REPL, just do `heathen -r`.  For more information, check out the REPL section of this README.
 
 If you want to use Heathen with Node, you have a similar API.  First you'll have to require the
 module, of course:
@@ -141,6 +145,56 @@ the `input` property, you'll end up with an empty JavaScript module.
 
 There is also one more option not shown in the above example.  If you specify a `modulize` property
 and set it to `false`, your compiled output will not be wrapped in a module.
+
+Apart from compiling code via JavaScript, you can also use your required module to start up
+the Heathen REPL.  Just do one of these:
+
+```javascript
+heathen.repl(function () { /* What to do when the REPL exits. */ });
+```
+
+And the REPL should start up in the command line.
+
+Using the REPL
+--------------
+
+Using the Heathen REPL is really easy.  After having launched it from the command line you'll
+see something like this:
+
+```
+Heathen 0.0.1
+user=>
+```
+
+The part that says `user=>` is the prompt.  It means the REPL is waiting for input.  From here
+you can try out any Heathen code and view the output.  For example:
+
+```
+user=> (+ 1 2)
+3
+
+user=> (console.log 'Hello World!')
+Hello World!
+undefined
+```
+> Remember: console.log returns undefined so "undefined" will show up in the REPL.
+
+So what if you wanted to try an example that spanned multiple lines? No problem. Just hit
+the enter key like you normally would.  Heathen counts your list opening characters and compares
+them to your amount of list closing characters so as long as you have more openers than closers,
+the REPL will continue to wait for them to match up before evaluating the code:
+
+```
+user=> (fn foo |x y|
+user=> ... (let z 3)
+user=> ... (+ x y z))
+{ [Function: foo] _paramPositions: { x: 0, y: 1 } }
+
+user=> (foo 1 2)
+6
+```
+
+To exit the REPL, just call the `(quit)` function.  And that's about it.  Enjoy!
 
 Syntax
 ------

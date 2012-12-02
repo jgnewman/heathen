@@ -47,80 +47,82 @@ module.exports = {
         if (defaults.onquit) {
           defaults.onquit();
         }
-      }
-
-      /*
-       * Rip out strings, comments, and regex so we can count parentheses.
-       */
-      clean = line.replace(/\;\*[\.]*\*\;/g, '')
-                  .replace(/\;[\.]*$/g, '')
-                  .replace(/\/([^\s\/]|\\[\s\/])+\/(gim|gmi|mig|mgi|igm|img|gi|ig|gm|mg|mi|im|g|i|m)?\//g, '')
-                  .replace(/\"([^"\n]|\\["\n])*\"|\'([^'\n]|\\['\n])*\'/g, '');
-      openMatches  = clean.match(/[\(\[\{]/g);
-      closeMatches = clean.match(/[\)\]\}]/g);
-
-      /*
-       * Augment input accumulators as necessary.
-       */
-      if (openMatches) {
-        openers += openMatches.length;
-      }
-      if (closeMatches) {
-        closers += closeMatches.length;
-      }
-      builder += (line + ' ');
-
-      if (openers === closers) {
-        /*
-         * 1. Call the preprocess on the input.
-         * 2. Evaluate the preprocessed input within the scope of a clean global.
-         * 3. Call the postprocess on the output.
-         * 4. Log the postprocessed output to the console.
-         */
-        console.log(
-          defaults.postprocess(
-            eval.call(global,
-              defaults.preprocess(builder)
-            )
-          )
-        );
-
-        /*
-         * Reset the input accumulators.
-         */
-        openers = 0;
-        closers = 0;
-        builder = '';
-
-        /*
-         * Wait for more input.
-         */
-        rlInt.setPrompt(prompt1);
-        rlInt.prompt();
-      
-      } else if (closers > openers) {
-        console.error('Woops!  Too many closers and not enough openers.  Try that again.');
-
-        /*
-         * Reset the input accumulators.
-         */
-        openers = 0;
-        closers = 0;
-        builder = '';
-
-        /*
-         * Wait for more input.
-         */
-        rlInt.setPrompt(prompt1);
-        rlInt.prompt();
-      
       } else {
 
         /*
-         * Keep accumulating data.
+         * Rip out strings, comments, and regex so we can count parentheses.
          */
-        rlInt.setPrompt(prompt2);
-        rlInt.prompt();
+        clean = line.replace(/\;\*[\.]*\*\;/g, '')
+                    .replace(/\;[\.]*$/g, '')
+                    .replace(/\/([^\s\/]|\\[\s\/])+\/(gim|gmi|mig|mgi|igm|img|gi|ig|gm|mg|mi|im|g|i|m)?\//g, '')
+                    .replace(/\"([^"\n]|\\["\n])*\"|\'([^'\n]|\\['\n])*\'/g, '');
+        openMatches  = clean.match(/[\(\[\{]/g);
+        closeMatches = clean.match(/[\)\]\}]/g);
+
+        /*
+         * Augment input accumulators as necessary.
+         */
+        if (openMatches) {
+          openers += openMatches.length;
+        }
+        if (closeMatches) {
+          closers += closeMatches.length;
+        }
+        builder += (line + ' ');
+
+        if (openers === closers) {
+          /*
+           * 1. Call the preprocess on the input.
+           * 2. Evaluate the preprocessed input within the scope of a clean global.
+           * 3. Call the postprocess on the output.
+           * 4. Log the postprocessed output to the console.
+           */
+          console.log(
+            defaults.postprocess(
+              eval.call(global,
+                defaults.preprocess(builder)
+              )
+            )
+          );
+
+          /*
+           * Reset the input accumulators.
+           */
+          openers = 0;
+          closers = 0;
+          builder = '';
+
+          /*
+           * Wait for more input.
+           */
+          rlInt.setPrompt(prompt1);
+          rlInt.prompt();
+        
+        } else if (closers > openers) {
+          console.error('Woops!  Too many closers and not enough openers.  Try that again.');
+
+          /*
+           * Reset the input accumulators.
+           */
+          openers = 0;
+          closers = 0;
+          builder = '';
+
+          /*
+           * Wait for more input.
+           */
+          rlInt.setPrompt(prompt1);
+          rlInt.prompt();
+        
+        } else {
+
+          /*
+           * Keep accumulating data.
+           */
+          rlInt.setPrompt(prompt2);
+          rlInt.prompt();
+        }
+
       }
     });
 

@@ -16,7 +16,7 @@ var fs       = require('fs'),
       , ''
       , '    -v, --version          Display the version of heathen.'
       , '    -h, --help             Display help information.'
-      , '    -r, --repl             Starts up the Heathen REPL.'
+      , '    -r, --repl             Start up the Heathen REPL.'
       , '    -o, --output [file]    The path to the file where you want to place compiled code.'
       , '    -m, --minify           Set this if you want to minify the code.'
       , '    -x, --no-module        Set this if you do not want the output wrapped in a module.'
