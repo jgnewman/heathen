@@ -24,7 +24,7 @@ var fs       = require('fs'),
     args;
 
 /*
- * Create a cleaner object with the user's options
+ * Create a cleaner object with the users options
  * and RUN DAT COMPILER!!
  */
 function processOptions(argObj) {

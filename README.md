@@ -93,7 +93,8 @@ Options:
   -v, --version          Display the version of heathen.
   -h, --help             Display help information.
   -o, --output [file]    The path to the file where you want to place compiled code.
-  -m, --minify
+  -m, --minify           Set this if you want to minify the code.
+  -x, --no-module        Set this if you do not want the output wrapped in a module.
 
 ```
 
@@ -104,6 +105,9 @@ Other than that, you can simply pass it a path specifying an input file.  If you
 output file with the `-o` flag, Heathen will output compiled code to the std out.  If you do
 specify an output file, it will asynchronously write code to that file.  Heathen will minify
 your code if you tell it to with the `-m` flag but, if not, it will come out nicely spaced and indented.
+
+By default, Heathen will wrap the compiled output in a module (in other words, an immediate closure.)
+However, if you do _not_ want this, set the `-x` flag.
 
 If you want to use Heathen with Node, you have a similar API.  First you'll have to require the
 module, of course:
