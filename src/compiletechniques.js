@@ -1265,10 +1265,14 @@ function writeLibs() {
 /*
  * Calls .compile() for every item in the parse tree.
  * Puts the compiled code together.
+ *
+ * If modulize is set to false, the output will not be wrapped in
+ * a module.  The default is to wrap the output so in most cases
+ * you won't need to worry about this parameter at all.
  */
-function program() {
+function program(modulize) {
   var frontWrap = '',
-      backWrap  = '\n}(this));\n',
+      backWrap  = (modulize === false ? '' : '\n}(this));\n\n'),
       begin     = '',
       varStr,
       libStr;
@@ -1280,7 +1284,7 @@ function program() {
   frontWrap += (' * https://github.com/jgnewman/heathen\n');
   frontWrap += (' */\n\n');
 
-  frontWrap += ('(function (_HN_global) {\n\n');
+  frontWrap += (modulize === false ? 'var _HN_global = this;\n\n' : '(function (_HN_global) {\n\n');
 
   loop(this.parseTree, function (each, index) {
     begin += ('  ' + each.compile());

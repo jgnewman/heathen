@@ -10,9 +10,9 @@ var lexer  = require('./lexer'),
  * Run the lexer, run the parser, run the compile techniques.
  */
 module.exports = {
-  "compile" : function (rawCode) {
+  "compile" : function (rawCode, modulize) {
     var lexed     = lexer.lex(rawCode),
         parseTree = parser.parse(lexed);
-    return parseTree.compile();
+    return parseTree.compile(modulize);
   }
 };

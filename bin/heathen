@@ -7,19 +7,20 @@ var fs       = require('fs'),
     api      = require('../heathen'),
     bashArgs = process.argv.slice(2),
     usage    = [
-        ""
-      , "  Usage: heathen [input] [options]"
-      , ""
-      , "  Input: The path to the file containing Heathen code."
-      , ""
-      , "  Options:"
-      , ""
-      , "    -v, --version          Display the version of heathen."
-      , "    -h, --help             Display help information."
-      , "    -o, --output [file]    The path to the file where you want to place compiled code."
-      , "    -m, --minify"
-      , ""
-    ].join("\n"),
+        ''
+      , '  Usage: heathen [input] [options]'
+      , ''
+      , '  Input: The path to the file containing Heathen code.'
+      , ''
+      , '  Options:'
+      , ''
+      , '    -v, --version          Display the version of heathen.'
+      , '    -h, --help             Display help information.'
+      , '    -o, --output [file]    The path to the file where you want to place compiled code.'
+      , '    -m, --minify           Set this if you want to minify the code.'
+      , '    -x, --no-module        Set this if you do not want the output wrapped in a module.'
+      , ''
+    ].join('\n'),
     args;
 
 /*
@@ -38,6 +39,9 @@ function processOptions(argObj) {
   if (args['-m']) {
     options.minify = true;
   }
+  if (args['-x']) {
+    options.modulize = false;
+  }
 
   return api.compile(options);
 }
@@ -47,19 +51,21 @@ function processOptions(argObj) {
  * See lib/argparser.js for usage details.
  */
 args = argParse(bashArgs, [
-  ["-v", "--version"],
-  ["-h", "--help"],
-  ["-o", "--output"]
+  ['-v', '--version'],
+  ['-h', '--help'],
+  ['-o', '--output'],
+  ['-m', '--minify'],
+  ['-x', '--no-module']
 ]);
 
 /*
  * Determine what to do based on the arguments we have.
  */
-if (args["-v"]) {
+if (args['-v']) {
   console.log(version);
   process.exit(0);
 
-} else if (args["-h"]) {
+} else if (args['-h']) {
   console.log(usage);
   process.exit(0);
 

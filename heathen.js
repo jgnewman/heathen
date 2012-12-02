@@ -10,15 +10,16 @@ var fs       = require('fs'),
 
 /*
  * Options:
- * .code   - raw code
- * .input  - an input file
- * .output - an output file
- * .minify - boolean
+ * .code     - raw code
+ * .input    - an input file
+ * .output   - an output file
+ * .minify   - boolean
+ * .modulize - boolean (if false, code will not be wrapped in a module. otherwise, ignore this.)
  */
 module.exports = {
   "compile" : function (options) {
     var rawCode      = options.code || (options.input ? fs.readFileSync(options.input).toString() : ''),
-        compiledCode = compiler.compile(rawCode);
+        compiledCode = compiler.compile(rawCode, options.modulize);
 
     function finish(err, code) {
       if (err) {
