@@ -47,6 +47,11 @@ function processOptions(argObj) {
   return api.compile(options);
 }
 
+if (!bashArgs.length) {
+  console.error('Heathen what?');
+  process.exit(1);
+}
+
 /*
  * Parse arguments that came in from the command line.
  * See lib/argparser.js for usage details.
