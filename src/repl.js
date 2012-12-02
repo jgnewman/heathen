@@ -25,54 +25,104 @@ module.exports = {
           "quit"        : /^\s*quit\(\)\s*\;*\s*$/,
           "preprocess"  : function (input)  { return input;  },
           "postprocess" : function (output) { return output; }
-        };
+        },
+        builder = '',
+        openers = 0,
+        closers = 0,
+        prompt1,
+        prompt2;
+
 
     /*
-     * The process of reading, evalling, printing, and looping.
+     * Define what to do any time a new line is detected.
      */
-    function loop(skipBegin) {
+    rlInt.on('line', function (line) {
+      var clean, openMatches, closeMatches;
 
-      if (defaults.onbegin && !skipBegin) {
-        defaults.onbegin();
+      /*
+       * Quit if we see the quit pattern.
+       */
+      if (defaults.quit.test(line)) {
+        rlInt.close();
+        if (defaults.onquit) {
+          defaults.onquit();
+        }
       }
 
-      rlInt.question(defaults.prompt, function (input) {
+      /*
+       * Rip out strings, comments, and regex so we can count parentheses.
+       */
+      clean = line.replace(/\;\*[\.]*\*\;/g, '')
+                  .replace(/\;[\.]*$/g, '')
+                  .replace(/\/([^\s\/]|\\[\s\/])+\/(gim|gmi|mig|mgi|igm|img|gi|ig|gm|mg|mi|im|g|i|m)?\//g, '')
+                  .replace(/\"([^"\n]|\\["\n])*\"|\'([^'\n]|\\['\n])*\'/g, '');
+      openMatches  = clean.match(/[\(\[\{]/g);
+      closeMatches = clean.match(/[\)\]\}]/g);
 
-        /*
-         * Exit process if we hit the quit pattern.
-         */
-        if (defaults.quit.test(input)) {
-          rlInt.close();
-          if (defaults.onquit) {
-            defaults.onquit();
-          }
+      /*
+       * Augment input accumulators as necessary.
+       */
+      if (openMatches) {
+        openers += openMatches.length;
+      }
+      if (closeMatches) {
+        closers += closeMatches.length;
+      }
+      builder += (line + ' ');
 
+      if (openers === closers) {
         /*
-         * Otherwise...
+         * 1. Call the preprocess on the input.
+         * 2. Evaluate the preprocessed input within the scope of a clean global.
+         * 3. Call the postprocess on the output.
+         * 4. Log the postprocessed output to the console.
          */
-        } else {
-          
-          /*
-           * 1. Call the preprocess on the input.
-           * 2. Evaluate the preprocessed input within the scope of a clean global.
-           * 3. Call the postprocess on the output.
-           * 4. Log the postprocessed output to the console.
-           */
-          console.log(
-            defaults.postprocess(
-              eval.call(global,
-                defaults.preprocess(input)
-              )
+        console.log(
+          defaults.postprocess(
+            eval.call(global,
+              defaults.preprocess(builder)
             )
-          );
+          )
+        );
 
-          /*
-           * Keep going until we hit the quit pattern.
-           */
-          loop(true);
-        }
-      });
-    }
+        /*
+         * Reset the input accumulators.
+         */
+        openers = 0;
+        closers = 0;
+        builder = '';
+
+        /*
+         * Wait for more input.
+         */
+        rlInt.setPrompt(prompt1);
+        rlInt.prompt();
+      
+      } else if (closers > openers) {
+        console.error('Woops!  Too many closers and not enough openers.  Try that again.');
+
+        /*
+         * Reset the input accumulators.
+         */
+        openers = 0;
+        closers = 0;
+        builder = '';
+
+        /*
+         * Wait for more input.
+         */
+        rlInt.setPrompt(prompt1);
+        rlInt.prompt();
+      
+      } else {
+
+        /*
+         * Keep accumulating data.
+         */
+        rlInt.setPrompt(prompt2);
+        rlInt.prompt();
+      }
+    });
 
     /*
      * Options:
@@ -93,7 +143,22 @@ module.exports = {
       defaults.postprocess = options.postprocess || defaults.postprocess;
       defaults.onquit      = options.onquit      || null;
       defaults.onbegin     = options.onbegin     || null;
-      loop();
+
+      prompt1 = defaults.prompt;
+      prompt2 = prompt1 + '... ';
+      
+      /*
+       * Run the onbegin method.
+       */
+      if (defaults.onbegin) {
+        defaults.onbegin();
+      }
+
+      /*
+       * Set the prompt and run the REPL.
+       */
+      rlInt.setPrompt(prompt1);
+      rlInt.prompt();
     }
 
     return init;
