@@ -230,7 +230,7 @@ function value() {
     /*
      * Disallow creating global variables and/or modifying library code.
      */
-    if (/^_HN_global$|^HN[\.\[]/.test(this.val)) {
+    if (/^_HN_global$|^_HN_global([\.\[])?|^HN([\.\[])?/.test(this.val)) {
       throw new Error('Nice try.  No creating globals and no modifying library code allowed. Line ' + this.pos + '.');
     }
     return this.val;
